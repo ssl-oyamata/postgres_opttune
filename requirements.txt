@@ -1,0 +1,10 @@
+optuna
+scipy==1.3.2
+scikit-optimize
+cma
+paramiko
+psycopg2
+plotly
+pandas
+jupyter
+pytest

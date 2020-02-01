@@ -1,0 +1,87 @@
+FROM centos:7
+
+# install settings
+ARG INSTALL_DIR=/opt
+ARG OLTP_DIR=${INSTALL_DIR}/oltpbench
+ARG POSTGRES_HOME_DIR=/var/lib/pgsql
+ARG PGDATA=/var/lib/pgsql/12/data
+ARG GIT_OLTPBENCH=https://github.com/oltpbenchmark/oltpbench
+
+# yum install dependencies
+RUN yum install -y \
+       git \
+       wget \
+       sudo \
+       epel-release \
+       gcc \
+       yum-utils
+
+# python3 install
+RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y python36u python36u-libs python36u-devel python36u-pip
+
+# ant install
+RUN wget http://ftp.riken.jp/net/apache//ant/binaries/apache-ant-1.10.7-bin.tar.gz -P /tmp
+RUN tar zxf /tmp/apache-ant-1.10.7-bin.tar.gz -C /tmp
+RUN mv /tmp/apache-ant-1.10.7 /usr/share/ant
+RUN ln -s /usr/share/ant/bin/ant /usr/bin/ant
+ENV ANT_HOME=/usr/share/ant
+
+# java install
+WORKDIR ${INSTALL_DIR}
+RUN yum install -y java-1.8.0-openjdk-devel
+RUN echo -e "\n\
+export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk-1.8.0.232.b09-0.el7_7.x86_64 \n\
+export PATH=$PATH:$JAVA_HOME/bin \n\
+export CLASSPATH=.:$JAVA_HOME/lib \n\
+" >> /root/.bash_profile
+RUN source /root/.bash_profile
+
+# PostgreSQL install
+RUN yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+RUN yum install -y postgresql12 postgresql12-server postgresql12-libs postgresql12-contrib  postgresql12-devel
+USER postgres
+WORKDIR ${POSTGRES_HOME_DIR}
+RUN echo -e "\n\
+export PATH=/usr/pgsql-12/bin:$PATH \n\
+export PGHOME=/usr/pgsql-12 \n\
+export PGDATA=/var/lib/pgsql/12/data \n\
+export PGDATABASE=postgres \n\
+export PGPORT=5432 \n\
+export LD_LIBRARY_PATH=/usr/pgsql-12/lib:${LD_LIBRARY_PATH} \n\
+" > ${POSTGRES_HOME_DIR}/.bash_profile
+
+USER postgres
+WORKDIR ${POSTGRES_HOME_DIR}
+RUN set -x \
+    && source ${POSTGRES_HOME_DIR}/.bash_profile \
+    && /usr/pgsql-12/bin/initdb --encoding=UTF8 --locale=C ${PGDATA} \
+    && /usr/pgsql-12/bin/pg_ctl start -D ${PGDATA} \
+    && /usr/pgsql-12/bin/createdb tpcc \
+    && /usr/pgsql-12/bin/createdb study_history
+RUN cp -p ${PGDATA}/postgresql.conf ${PGDATA}/postgresql.conf.org
+COPY ./config/postgresql.conf ${PGDATA}/postgresql.conf
+
+# Change default locale to ja-JP.UTF-8
+USER root
+ENV LANG=ja_JP.UTF-8
+RUN localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
+
+# install oltpbench
+USER root
+WORKDIR ${INSTALL_DIR}
+RUN git clone ${GIT_OLTPBENCH} oltpbench
+WORKDIR ${OLTP_DIR}
+RUN set -x \
+    && source /root/.bash_profile \
+    && /usr/bin/ant bootstrap \
+    && /usr/bin/ant resolve \
+    && /usr/bin/ant build
+
+# sqlite install
+RUN yum install -y sqlite
+
+# auto start enabled
+RUN systemctl enable postgresql-12.service
+WORKDIR ${INSTALL_DIR}
+CMD /sbin/init
