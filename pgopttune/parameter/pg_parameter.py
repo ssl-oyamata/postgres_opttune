@@ -3,7 +3,7 @@ import json
 import time
 import logging
 import psycopg2
-from pgopttune.utils.unit import get_param_raw
+from pgopttune.utils.unit import get_param_raw, format_bytes_str, format_milliseconds_str
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
 from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
@@ -226,17 +226,9 @@ class Parameter:
         elif param_trial['type'] == 'float':
             param_values = float(param_trial['trial'])
         elif param_trial['type'] == 'bytes':
-            # FIXME : Unit setting according to value
-            param_values = int(param_trial['trial'] / (1024 ** 2))
-            param_values = str(param_values) + 'MB'
+            param_values = format_bytes_str(param_trial['trial'])
         elif param_trial['type'] == 'time':
-            # FIXME : Unit setting according to value
-            if param_trial['trial'] >= 1000:
-                param_values = int(param_trial['trial'] / (1000 ** 1))
-                param_values = str(param_values) + 's'
-            else:
-                param_values = int(param_trial['trial'])
-                param_values = str(param_values) + 'ms'
+            param_values = format_milliseconds_str(param_trial['trial'])
         elif param_trial['type'] == 'boolean' or param_trial['type'] == 'enum':
             param_values = str(param_trial['trial'])
         else:

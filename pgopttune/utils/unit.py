@@ -45,3 +45,43 @@ def get_param_raw(value, param_type):
         return str(value)
     else:
         raise Exception('parameter Type does not support')
+
+
+# bytes system format
+def format_bytes_str(size, precision=2):
+    format_size, format_unit = format_bytes(size)
+    return join_size_and_unit(format_size, format_unit, precision)
+
+
+def format_bytes(size):
+    power = BYTES_CONVERT[5][0]
+    unit = BYTES_CONVERT[5][1]  # default unit
+    for byte_unit in (reversed(BYTES_CONVERT)):
+        if size < byte_unit[0]:
+            break
+        power = byte_unit[0]
+        unit = byte_unit[1]
+
+    return size / power, unit
+
+
+# time system format
+def format_milliseconds_str(milliseconds, precision=2):
+    format_time, format_unit = format_milliseconds(milliseconds)
+    return join_size_and_unit(format_time, format_unit, precision)
+
+
+def format_milliseconds(milliseconds):
+    power = TIME_CONVERT[4][0]
+    unit = TIME_CONVERT[4][1]  # default unit
+    for time_unit in (reversed(TIME_CONVERT)):
+        if milliseconds < time_unit[0]:
+            break
+        power = time_unit[0]
+        unit = time_unit[1]
+
+    return milliseconds / power, unit
+
+
+def join_size_and_unit(format_size, format_unit, precision=2):
+    return str(round(format_size, precision)) + format_unit

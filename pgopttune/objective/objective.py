@@ -64,14 +64,14 @@ class Objective:
         # reset parameter value(reset postgresql.auto.conf)
         self.params.reset_param()
 
-    def get_tune_param(self, trial):
+    def get_tune_param(self, trial, precision=2):
         trial_array = []  # trial tuning array
         for tune_parameter in self.params.tune_parameters:
             trial_dict = tune_parameter
             if tune_parameter['type'] == 'float':
-                trial_dict['trial'] = trial.suggest_uniform(tune_parameter['name'],
+                trial_dict['trial'] = round(trial.suggest_uniform(tune_parameter['name'],
                                                             tune_parameter['tuning_range']['minval'],
-                                                            tune_parameter['tuning_range']['maxval'])
+                                                            tune_parameter['tuning_range']['maxval']), precision)
             elif tune_parameter['type'] == 'enum' or tune_parameter['type'] == 'boolean':
                 trial_dict['trial'] = trial.suggest_categorical(tune_parameter['name'],
                                                                 tune_parameter['tuning_range'])
