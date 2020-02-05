@@ -3,7 +3,7 @@ import os
 
 from pgopttune.utils.remote_command import SSHCommandExecutor
 
-'''
+
 @pytest.fixture()
 def ssh_client():
     ssh_client = SSHCommandExecutor(hostname='localhost', user='postgres', password='postgres')
@@ -35,4 +35,3 @@ class TestSSHCommandExecutor:
     def test_failed_command(self, ssh_client):
         ret = ssh_client.exec('aaaaaaaaaaaaa', only_retval=False)
         assert ret["retval"] != 1
-'''
