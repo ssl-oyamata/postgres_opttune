@@ -6,27 +6,19 @@ logger = logging.getLogger(__name__)
 
 
 class Workload:
-    def __init__(self, host='localhost', port=5432, user='postgres', password='postgres12', database='postgres',
-                 pgdata='/var/lib/pgsql/12/data', bin='/usr/pgsql-12/bin', pg_os_user='postgres'):
-        self.pgdata = pgdata
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
-        self.database = database
-        self.bin = bin
-        self.pg_os_user = pg_os_user
+    def __init__(self, postgres_server_config):
+        self.postgres_server_config = postgres_server_config
 
     def vacuum_database(self):
         """
         run vacuum analyze
         """
         vacuum_analyze_sql = "VACUUM ANALYZE"
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.host,
-                                              pgport=self.port,
-                                              pguser=self.user,
-                                              pgpassword=self.password,
-                                              pgdatabase=self.database
+        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
+                                              pgport=self.postgres_server_config.port,
+                                              pguser=self.postgres_server_config.user,
+                                              pgpassword=self.postgres_server_config.password,
+                                              pgdatabase=self.postgres_server_config.database
                                               )) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
