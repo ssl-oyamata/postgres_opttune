@@ -1,5 +1,4 @@
 import logging
-import optuna
 from pgopttune.parameter.pg_parameter import Parameter
 
 logger = logging.getLogger(__name__)
@@ -7,33 +6,12 @@ logger = logging.getLogger(__name__)
 
 class Objective:
     def __init__(self,
-                 pgdata='/var/lib/pgsql/12/data',
-                 major_version=12,
-                 pghost='localhost',
-                 pgport=5432,
-                 pguser='postgres',
-                 pgpassword='postgres12',
-                 pgdatabase='postgres',
-                 pgbin='/usr/pgsql-12/bin',
-                 pg_os_user='postgres',
-                 ssh_port=22,
-                 ssh_password='postgres',
-                 params_json_dir='./conf',
-                 data_load_interval=1
+                 postgres_server_config,
+                 tune_config
                  ):
-        self.params = Parameter(pgdata=pgdata,  # turning parameter
-                                pghost=pghost,
-                                pgport=pgport,
-                                pguser=pguser,
-                                pgpassword=pgpassword,
-                                pgdatabase=pgdatabase,
-                                pgbin=pgbin,
-                                pg_os_user=pg_os_user,
-                                ssh_port=ssh_port,
-                                ssh_password=ssh_password,
-                                major_version=major_version,
-                                params_json_dir=params_json_dir)
-        self.data_load_interval = data_load_interval
+        self.params = Parameter(postgres_server_config,  # turning parameter
+                                params_json_dir=tune_config.parameter_json_dir)
+        self.data_load_interval = tune_config.data_load_interval
         self.workload = None
 
     def __call__(self, trial):
@@ -70,8 +48,8 @@ class Objective:
             trial_dict = tune_parameter
             if tune_parameter['type'] == 'float':
                 trial_dict['trial'] = round(trial.suggest_uniform(tune_parameter['name'],
-                                                            tune_parameter['tuning_range']['minval'],
-                                                            tune_parameter['tuning_range']['maxval']), precision)
+                                                                  tune_parameter['tuning_range']['minval'],
+                                                                  tune_parameter['tuning_range']['maxval']), precision)
             elif tune_parameter['type'] == 'enum' or tune_parameter['type'] == 'boolean':
                 trial_dict['trial'] = trial.suggest_categorical(tune_parameter['name'],
                                                                 tune_parameter['tuning_range'])

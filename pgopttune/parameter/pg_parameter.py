@@ -12,33 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class Parameter:
-    def __init__(self, major_version=12,
-                 pgdata='/var/lib/pgsql/12/data/',
-                 pghost='localhost',
-                 pgport=5432,
-                 pguser='postgres',
-                 pgpassword='postges12',
-                 pgdatabase='postgres',
-                 pgbin='/usr/pgsql-12/bin',
-                 pg_os_user='postgres',
-                 ssh_port=22,
-                 ssh_password='postgres',
-                 params_json_dir='./conf'
-                 ):
-        self.pgdata = pgdata
-        self.user = pguser
-        self.password = pgpassword
-        self.host = pghost
-        self.port = pgport
-        self.database = pgdatabase
-        self.bin = pgbin
-        self.ssh_port = ssh_port
-        self.pg_os_user = pg_os_user
-        self.ssh_password = ssh_password
-        self.config_path = os.path.join(self.pgdata, 'postgresql.conf')
-        self.tune_params_path = '{}/version-{}.json'.format(params_json_dir, major_version)
+    def __init__(self, postgres_server_config, params_json_dir='./conf'):
+        self.postgres_server_config = postgres_server_config
+        self.config_path = os.path.join(self.postgres_server_config.pgdata, 'postgresql.conf')
+        self.tune_params_path = '{}/version-{}.json'.format(params_json_dir, postgres_server_config.major_version)
         # check file
-        if (self.host == '127.0.0.1' or self.host == 'localhost') and not os.path.exists(self.config_path):
+        if (
+                self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost') \
+                and not os.path.exists(self.config_path):
             raise ValueError("postgresql.conf does not exist. path : {}".format(self.config_path))
         if not os.path.exists(self.tune_params_path):
             raise ValueError("tune paramer file does not exist. path : {}".format(self.tune_params_path))
@@ -71,11 +52,11 @@ class Parameter:
         # postgresql.auto.conf clear
         alter_system_sql = "ALTER SYSTEM RESET ALL"
         # use psycopg2
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.host,
-                                              pgport=self.port,
-                                              pguser=self.user,
-                                              pgpassword=self.password,
-                                              pgdatabase=self.database
+        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
+                                              pgport=self.postgres_server_config.port,
+                                              pguser=self.postgres_server_config.user,
+                                              pgpassword=self.postgres_server_config.password,
+                                              pgdatabase=self.postgres_server_config.database
                                               )) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
@@ -99,11 +80,11 @@ class Parameter:
             param_name, param_trial_value = self._convert_trial_value_unit(param_trial)
             alter_system_sql = "ALTER SYSTEM SET {} = '{}'".format(param_name, param_trial_value)
             # use psycopg2
-            with get_pg_connection(dsn=get_pg_dsn(pghost=self.host,
-                                                  pgport=self.port,
-                                                  pguser=self.user,
-                                                  pgpassword=self.password,
-                                                  pgdatabase=self.database
+            with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
+                                                  pgport=self.postgres_server_config.port,
+                                                  pguser=self.postgres_server_config.user,
+                                                  pgpassword=self.postgres_server_config.password,
+                                                  pgdatabase=self.postgres_server_config.database
                                                   )) as conn:
                 conn.set_session(autocommit=True)
                 with conn.cursor() as cur:
@@ -118,7 +99,7 @@ class Parameter:
         """
         change tune.conf using trial values(not using)
         """
-        tune_setting_path = os.path.join(self.pgdata, 'conf.d/tune.conf')
+        tune_setting_path = os.path.join(self.postgres_server_config.pgdata, 'conf.d/tune.conf')
         signal = "# configurations recommended by optuna:\n"
         with open(tune_setting_path, mode='w') as f:
             f.write(signal)
@@ -151,16 +132,20 @@ class Parameter:
             self._free_cache()
 
     def _restart_database(self):
-        restart_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} -w -t 600 restart'.format(self.pg_os_user, self.bin,
-                                                                                        self.pgdata)
+        restart_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} -w -t 600 restart'.format(
+            self.postgres_server_config.os_user, self.postgres_server_config.pgbin,
+            self.postgres_server_config.pgdata)
         # localhost PostgreSQL
-        if self.host == '127.0.0.1' or self.host == 'localhost':
+        if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
             run_command(restart_database_cmd, stdout_devnull=True)
         # remote PostgreSQL
         else:
-            restart_database_cmd = '{}/pg_ctl -D {} -w -t 600 restart'.format(self.bin, self.pgdata)
-            ssh = SSHCommandExecutor(user=self.pg_os_user, password=self.ssh_password, hostname=self.host,
-                                     port=self.ssh_port)
+            restart_database_cmd = '{}/pg_ctl -D {} -w -t 600 restart'.format(self.postgres_server_config.pgbin,
+                                                                              self.postgres_server_config.pgdata)
+            ssh = SSHCommandExecutor(user=self.postgres_server_config.os_user,
+                                     password=self.postgres_server_config.ssh_password,
+                                     hostname=self.postgres_server_config.host,
+                                     port=self.postgres_server_config.ssh_port)
             ret = ssh.exec(restart_database_cmd)
             if not ret['retval'] == 0:
                 raise ValueError('PostgreSQL restart failed.\n'
@@ -172,11 +157,11 @@ class Parameter:
         # use psycopg2
         for i in range(max_retry + 1):
             try:
-                with get_pg_connection(dsn=get_pg_dsn(pghost=self.host,
-                                                      pgport=self.port,
-                                                      pguser=self.user,
-                                                      pgpassword=self.password,
-                                                      pgdatabase=self.database
+                with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
+                                                      pgport=self.postgres_server_config.port,
+                                                      pguser=self.postgres_server_config.user,
+                                                      pgpassword=self.postgres_server_config.password,
+                                                      pgdatabase=self.postgres_server_config.database
                                                       )) as conn:
                     with conn.cursor() as cur:
                         cur.execute(is_in_recovery_sql)
@@ -205,11 +190,13 @@ class Parameter:
         free_cache_cmd = 'sudo bash -c "sync"; sudo bash -c "echo 1 > /proc/sys/vm/drop_caches"'
 
         # localhost PostgreSQL
-        if self.host == '127.0.0.1' or self.host == 'localhost':
+        if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
             run_command(free_cache_cmd)
         else:
-            ssh = SSHCommandExecutor(user=self.pg_os_user, password=self.ssh_password, hostname=self.host,
-                                     port=self.ssh_port)
+            ssh = SSHCommandExecutor(user=self.postgres_server_config.os_user,
+                                     password=self.postgres_server_config.ssh_password,
+                                     hostname=self.postgres_server_config.host,
+                                     port=self.postgres_server_config.ssh_port)
             ret = ssh.exec(free_cache_cmd)
             if not ret['retval'] == 0:
                 raise ValueError('Free cache failed.\n'
@@ -245,24 +232,27 @@ class Parameter:
             print(add_param, file=f)
 
         # mkdir conf.d
-        include_dir = os.path.join(self.pgdata, 'conf.d')
+        include_dir = os.path.join(self.postgres_server_config.pgdata, 'conf.d')
         os.makedirs(include_dir, exist_ok=True)
 
         # change owner
-        change_owner_cmd = 'sudo chown {}:{} {}'.format(self.pg_os_user, self.pg_os_user, include_dir)
+        change_owner_cmd = 'sudo chown {}:{} {}'.format(self.postgres_server_config.os_user,
+                                                        self.postgres_server_config.os_user, include_dir)
         run_command(change_owner_cmd)
 
         # restart postgreSQL
-        self._restart_postgres(self.pgdata)
+        self._restart_postgres()
 
-    def _restart_postgres(self, pgdata='/var/lib/pgsql/12/data'):
+    def _restart_postgres(self):
         """
         Restart PostgreSQL.
         FIXME : Deleted at a later date because it is an unused function
         """
         # localhost PostgreSQL
-        if self.host == '127.0.0.1' or self.host == 'localhost':
-            restart_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} -w restart'.format(self.pg_os_user, self.bin, pgdata)
+        if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
+            restart_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} -w restart'.format(
+                self.postgres_server_config.os_user, self.postgres_server_config.pgbin,
+                self.postgres_server_config.pgdata)
             run_command(restart_database_cmd)
         else:
             raise NotImplementedError('This function does not support remote PostgreSQL.')

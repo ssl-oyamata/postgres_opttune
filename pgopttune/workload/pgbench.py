@@ -10,38 +10,31 @@ logger = logging.getLogger(__name__)
 
 
 class Pgbench(Workload):
-    def __init__(self,
-                 host='localhost',
-                 port=5432,
-                 user='postgres',
-                 password='postgres12',
-                 database='postgres',
-                 pgdata='/var/lib/pgsql/12/data',
-                 bin='/usr/pgsql-12/bin',
-                 pg_os_user='postgres',
-                 benchmark_scale_factor=10,
-                 benchmark_evaluation_time=30,
-                 benchmark_clients=75,
-                 ):
-        super().__init__(host=host, port=port, user=user, password=password, database=database,
-                         pgdata=pgdata, bin=bin, pg_os_user=pg_os_user)
-        self.scale_factor = benchmark_scale_factor
-        self.evaluation_time = benchmark_evaluation_time
-        self.clients = benchmark_clients
-        os.environ['PGPASSWORD'] = password
+    def __init__(self, postgres_server_config, pgbench_config):
+        super().__init__(postgres_server_config)
+        self.pgbench_config = pgbench_config
+        os.environ['PGPASSWORD'] = postgres_server_config.password
 
     def data_load(self):
-        data_load_cmd = "{}/pgbench -h {} -p {} -U {} {} -i -s {}".format(self.bin, self.host, self.port, self.user,
-                                                                          self.database, self.scale_factor)
+        data_load_cmd = "{}/pgbench -h {} -p {} -U {} {} -i -s {}".format(self.postgres_server_config.pgbin,
+                                                                          self.postgres_server_config.host,
+                                                                          self.postgres_server_config.port,
+                                                                          self.postgres_server_config.user,
+                                                                          self.postgres_server_config.database,
+                                                                          self.pgbench_config.scale_factor)
         logger.debug('run pgbench data load command : {}'.format(data_load_cmd))
         run_command(data_load_cmd)
         self.vacuum_database()  # vacuum analyze
 
     def run(self):
         grep_string = "excluding"
-        run_cmd_str = "{}/pgbench -h {} -p {} -U {} {} -c {} -T {}".format(self.bin, self.host, self.port, self.user,
-                                                                           self.database, self.clients,
-                                                                           self.evaluation_time)
+        run_cmd_str = "{}/pgbench -h {} -p {} -U {} {} -c {} -T {}".format(self.postgres_server_config.pgbin,
+                                                                           self.postgres_server_config.host,
+                                                                           self.postgres_server_config.port,
+                                                                           self.postgres_server_config.user,
+                                                                           self.postgres_server_config.database,
+                                                                           self.pgbench_config.clients,
+                                                                           self.pgbench_config.evaluation_time)
         run_cmd = run_cmd_str.split()
         grep_cmd = "grep {}".format(grep_string)
         grep_cmd = grep_cmd.split()

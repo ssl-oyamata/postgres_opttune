@@ -10,22 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class Oltpbench(Workload):
-    def __init__(self, host='localhost', port=5432, user='postgres', password='postgres12', database='postgres',
-                 pgdata='/var/lib/pgsql/12/data', bin='/usr/pgsql-12/bin', pg_os_user='postgres',
-                 oltppath='/root/oltpbench', bench='tpcc', oltpbench_config_path='./conf/tpcc_config_postgres.xml'):
-        super().__init__(host=host, port=port, user=user, password=password, database=database,
-                         pgdata=pgdata, bin=bin, pg_os_user=pg_os_user)
-        self.oltppath = oltppath
-        self.bench = bench
-        self.oltpbench_config_path = oltpbench_config_path
+    def __init__(self, postgres_server_config, oltpbench_config):
+        super().__init__(postgres_server_config)
+        self.oltpbench_config = oltpbench_config
 
     def data_load(self):
         cwd = os.getcwd()
-        config_path = os.path.join(cwd, self.oltpbench_config_path)
-        data_load_cmd = "{}/oltpbenchmark -b {} -c {} --create=true --load=true".format(self.oltppath,
-                                                                                        self.bench,
-                                                                                        config_path)
-        os.chdir(self.oltppath)
+        config_path = os.path.join(cwd, self.oltpbench_config.oltpbench_config_path)
+        data_load_cmd = "{}/oltpbenchmark -b {} -c {} --create=true --load=true".format(
+            self.oltpbench_config.oltpbench_path,
+            self.oltpbench_config.benchmark_kind,
+            config_path)
+        os.chdir(self.oltpbench_config.oltpbench_path)
         logger.debug('run oltpbench data load command : {}'.format(data_load_cmd))
         run_command(data_load_cmd)
         os.chdir(cwd)
@@ -34,10 +30,12 @@ class Oltpbench(Workload):
     def run(self):
         grep_string = "requests\/sec"
         cwd = os.getcwd()
-        config_path = os.path.join(cwd, self.oltpbench_config_path)
-        run_cmd_str = "{}/oltpbenchmark -b {} -c {} --execute=true -s 5".format(self.oltppath, self.bench,
-                                                                                config_path)
-        os.chdir(self.oltppath)
+        config_path = os.path.join(cwd, self.oltpbench_config.oltpbench_config_path)
+        run_cmd_str = "{}/oltpbenchmark -b {} -c {} --execute=true -s 5". \
+            format(self.oltpbench_config.oltpbench_path,
+                   self.oltpbench_config.benchmark_kind,
+                   config_path)
+        os.chdir(self.oltpbench_config.oltpbench_path)
         run_cmd = run_cmd_str.split()
         grep_cmd = "grep {}".format(grep_string)
         grep_cmd = grep_cmd.split()
