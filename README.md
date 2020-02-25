@@ -1,6 +1,6 @@
 # postgres_opttune
 Trying PostgreSQL parameter tuning using machine learning.
-(Currently beta verion)
+(Currently beta version)
 
 ## Overview
 postgres_opttune is a tool developed to tune PostgreSQL's parameters.
