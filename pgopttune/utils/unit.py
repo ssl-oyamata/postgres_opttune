@@ -50,6 +50,8 @@ def get_param_raw(value, param_type):
 # bytes system format
 def format_bytes_str(size, precision=2):
     format_size, format_unit = format_bytes(size)
+    if precision == 0:
+        return str(int(format_size)) + format_unit
     return join_size_and_unit(format_size, format_unit, precision)
 
 
@@ -68,7 +70,10 @@ def format_bytes(size):
 # time system format
 def format_milliseconds_str(milliseconds, precision=2):
     format_time, format_unit = format_milliseconds(milliseconds)
-    return join_size_and_unit(format_time, format_unit, precision)
+    if precision == 0:
+        return str(int(format_time)) + format_unit
+    else:
+        return join_size_and_unit(format_time, format_unit, precision)
 
 
 def format_milliseconds(milliseconds):

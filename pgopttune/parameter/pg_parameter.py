@@ -2,7 +2,9 @@ import os
 import json
 import time
 import logging
+import shutil
 import psycopg2
+from pgopttune.resource.hardware import HardwareResource
 from pgopttune.utils.unit import get_param_raw, format_bytes_str, format_milliseconds_str
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
@@ -15,23 +17,19 @@ class Parameter:
     def __init__(self, postgres_server_config, params_json_dir='./conf'):
         self.postgres_server_config = postgres_server_config
         self.config_path = os.path.join(self.postgres_server_config.pgdata, 'postgresql.conf')
-        self.tune_params_path = '{}/version-{}.json'.format(params_json_dir, postgres_server_config.major_version)
+        self.tune_parameters_json_path = '{}/version-{}.json'.format(params_json_dir,
+                                                                     postgres_server_config.major_version)
         # check file
         if (
                 self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost') \
                 and not os.path.exists(self.config_path):
             raise ValueError("postgresql.conf does not exist. path : {}".format(self.config_path))
-        if not os.path.exists(self.tune_params_path):
-            raise ValueError("tune paramer file does not exist. path : {}".format(self.tune_params_path))
+        if not os.path.exists(self.tune_parameters_json_path):
+            raise ValueError("tune paramer file does not exist. path : {}".format(self.tune_parameters_json_path))
         self.tune_parameters = self.raw_size_parameters()
 
-    def load_json_parameters(self):
-        # load tuning parameters
-        with open(self.tune_params_path, "r") as f:
-            return json.load(f)
-
     def raw_size_parameters(self):
-        tune_parameters = self.load_json_parameters()
+        tune_parameters = self.load_json_parameters(self.tune_parameters_json_path)
         raw_size_parameters = []
         for tune_parameter in tune_parameters:
             raw_size_parameter = tune_parameter
@@ -221,6 +219,41 @@ class Parameter:
         else:
             raise Exception('parameter Type does not support')
         return param_name, param_values
+
+    @staticmethod
+    def load_json_parameters(tune_parameters_json_path):
+        # load tuning parameters
+        with open(tune_parameters_json_path, "r") as f:
+            return json.load(f)
+
+    @staticmethod
+    def create_tune_parameter_json(host, major_version, params_json_dir='./conf'):
+        hardware = HardwareResource(host=host)
+        tune_parameter_json_path = '{}/version-{}.json'.format(params_json_dir, major_version)
+        tune_parameter_json_backup_path = '{}/version-{}.json.org'.format(params_json_dir, major_version)
+        tune_parameters = Parameter.load_json_parameters(tune_parameter_json_path)
+
+        for index, tune_parameter in enumerate(tune_parameters):
+            if Parameter.check_parameter_maxvalue_depend_memory_size(tune_parameter['name']):
+                tune_parameters[index]['tuning_range']['maxval'] = format_bytes_str(hardware.memory_size * 0.75,
+                                                                                    precision=0)
+            elif Parameter.check_parameter_maxvalue_depend_cpu(tune_parameter['name']):
+                tune_parameters[index]['tuning_range']['maxval'] = int(hardware.cpu_count)
+
+        shutil.copyfile(tune_parameter_json_path, tune_parameter_json_backup_path)  # backup
+        with open(tune_parameter_json_path, 'w') as f:
+            json.dump(tune_parameters, f, indent=2)
+
+    @staticmethod
+    def check_parameter_maxvalue_depend_memory_size(parameter_name):
+        parameters_depend_memory_size = ['effective_cache_size', 'shared_buffers', 'max_wal_size', 'temp_buffers']
+        return parameter_name in parameters_depend_memory_size
+
+    @staticmethod
+    def check_parameter_maxvalue_depend_cpu(parameter_name):
+        parameters_depend_cpu = ['max_worker_processes', 'max_parallel_workers',
+                                 'max_parallel_workers_per_gather', 'max_parallel_maintenance_workers']
+        return parameter_name in parameters_depend_cpu
 
     def add_include_dir(self):
         """

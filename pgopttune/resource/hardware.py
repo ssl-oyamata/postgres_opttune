@@ -9,14 +9,14 @@ logger = logging.getLogger(__name__)
 
 class HardwareResource:
     def __init__(self, host='127.0.0.1', user='postgres', password='postgres'):
-        if host == '127.0.0.1' or host == 'localhost':
+        self.host = host
+        if self.host == '127.0.0.1' or self.host == 'localhost':
             self.cpu_count = psutil.cpu_count()
             mem = psutil.virtual_memory()
             self.memory_size = mem.total
             swap = psutil.swap_memory()
             self.swap_size = swap.total
         else:
-            self.host = host
             self.user = user
             self.password = password
             self.cpu_count = self._get_remote_cpu_count()

@@ -1,7 +1,5 @@
 import os
 import sys
-import errno
-import configparser
 import optuna
 import logging
 from logging import config
@@ -12,6 +10,7 @@ from pgopttune.study.study import create_study
 from pgopttune.objective.objective_pgbench import ObjectivePgbench
 from pgopttune.objective.objective_oltpbench import ObjectiveOltpbench
 from pgopttune.parameter.reset import reset_postgres_param
+from pgopttune.parameter.pg_parameter import Parameter
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
 from pgopttune.config.oltpbench_config import OltpbenchConfig
@@ -29,6 +28,12 @@ def main(
     logging.config.dictConfig(logging_dict(debug=strtobool(tune_config.debug)))
     logger = logging.getLogger(__name__)
     optuna.logging.enable_propagation()  # Propagate logs to the root logger.
+
+    # create tune parameter json
+    # path : ./conf/version-<major-version>.json
+    Parameter.create_tune_parameter_json(postgres_server_config.host,
+                                         postgres_server_config.major_version,
+                                         params_json_dir=tune_config.parameter_json_dir)
 
     logger.info('Run benchmark : {}'.format(tune_config.benchmark))
     # pgbench
