@@ -120,7 +120,7 @@ class Parameter:
         with open(save_conf_path, mode='a') as f:
             for param_trial in params_trial:
                 param_trial_name, param_trial_values = self._convert_trial_value_unit(param_trial)
-                f.write('{} = {}\n'.format(param_trial_name, param_trial_values))
+                f.write('{} = \'{}\'\n'.format(param_trial_name, param_trial_values))
         return save_conf_path
 
     def reset_database(self, is_free_cache=True):
