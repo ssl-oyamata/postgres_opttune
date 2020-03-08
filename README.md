@@ -92,32 +92,6 @@ $ exit
     evaluation_time = 300 # time of benchmark run
 ```
 
-10. Set the evaluation conditions of PostgreSQL parameters to be tuned according to the evaluation environment.
-Change tuning_range (maxval, minval) to a range that can be set in the evaluation environment.
-```
-# vi ~/postgres_opttune/conf/version-12.conf
-
-    ex.
-    {
-      "name": "effective_cache_size",
-      "tuning_range": {
-        "minval": "128MB",
-        "maxval": "1024MB"   --->   "8GB"
-      },
-      "default": "512MB",
-      "type": "bytes"
-    },
-    {
-      "name": "shared_buffers",
-      "tuning_range": {
-        "minval": "128MB",
-        "maxval": "512MB"   --->   "6GB"
-      },
-      "default": "128MB",
-      "type": "bytes"
-    },
-```
-
 ### Useage
 1. Running benchmark
 ```
@@ -190,33 +164,7 @@ Item numbers 1 to 8 of the installation method are the same as pgbench.
     oltpbench_config_path = ./conf/tpcc_config_postgres.xml # config path
 ```
 
-15. Set the evaluation conditions of PostgreSQL parameters to be tuned according to the evaluation environment.
-Change tuning_range (maxval, minval) to a range that can be set in the evaluation environment.
-```
-# vi ~/postgres_opttune/conf/version-12.json
-
-    ex.
-    {
-      "name": "effective_cache_size",
-      "tuning_range": {
-        "minval": "128MB",
-        "maxval": "1024MB"   --->   "8GB"
-      },
-      "default": "512MB",
-      "type": "bytes"
-    },
-    {
-      "name": "shared_buffers",
-      "tuning_range": {
-        "minval": "128MB",
-        "maxval": "512MB"   --->   "6GB"
-      },
-      "default": "128MB",
-      "type": "bytes"
-    },
-```
-
-16. Edit login credentials for oltpbench workload
+15. Edit login credentials for oltpbench workload
 ```
 # vi ~/postgres_opttune/conf/tpcc_config_postgres.xml
 
@@ -231,7 +179,7 @@ Change tuning_range (maxval, minval) to a range that can be set in the evaluatio
           <time>1800</time>  # observation time is 30 mins
 ```
 
-17. Edit max_connections in postgresql.conf according to the number of concurrent connections for the oltpbench workload
+16. Edit max_connections in postgresql.conf according to the number of concurrent connections for the oltpbench workload
 ```
 # vi /var/lib/pgsql/12/data/postgresql.conf
 
