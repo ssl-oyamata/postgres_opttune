@@ -18,6 +18,24 @@
     "type": "bytes"
   },
   {
+    "name": "max_worker_processes",
+    "tuning_range": {
+      "minval": 0,
+      "maxval": 8
+    },
+    "default": 8,
+    "type": "integer"
+  },
+  {
+    "name": "max_parallel_workers",
+    "tuning_range": {
+      "minval": 0,
+      "maxval": 8
+    },
+    "default": 8,
+    "type": "integer"
+  },
+  {
     "name": "max_parallel_workers_per_gather",
     "tuning_range": {
       "minval": 0,
