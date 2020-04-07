@@ -60,11 +60,6 @@ class Parameter:
             with conn.cursor() as cur:
                 cur.execute(alter_system_sql)
 
-        # use psql(old version)
-        # alter_system_cmd = 'sudo -i -u {} {}/psql -h {} -U {} -d {} -Atqc "{}"' \
-        #    .format(self.pg_os_user, self.bin, self.host, self.user, self.database, alter_system_sql)
-        # run_command(alter_system_cmd)
-
         self.reset_database(is_free_cache=False)  # restart PostgreSQL for reset parameter
 
     def change_param_to_trial_values(self, params_trial=None):
@@ -87,11 +82,6 @@ class Parameter:
                 conn.set_session(autocommit=True)
                 with conn.cursor() as cur:
                     cur.execute(alter_system_sql)
-
-            # use psql(old version)
-            # alter_system_cmd = 'sudo -i -u {} {}/psql -h {} -U {} -d {} -Atqc "{}"' \
-            #     .format(self.pg_os_user, self.bin, self.host, self.user, self.database, alter_system_sql)
-            # run_command(alter_system_cmd)
 
     def change_conf_to_trial_values(self, params_trial=None):
         """
@@ -176,14 +166,6 @@ class Parameter:
 
         raise TimeoutError('PostgreSQL startup did not complete.')
 
-        # use psql(old version)
-        # startup_database_cmd = '{}/psql -h {} -U {} -d {} -Atqc "SELECT pg_is_in_recovery()"' \
-        #     .format(self.bin, self.host, self.user, self.database)
-        # res = run_command(startup_database_cmd)
-        # while res.returncode != 0:
-        #     time.sleep(20)
-        #     res = run_command(startup_database_cmd)
-
     def _free_cache(self):
         free_cache_cmd = 'sudo bash -c "sync"; sudo bash -c "echo 1 > /proc/sys/vm/drop_caches"'
 
@@ -254,38 +236,3 @@ class Parameter:
         parameters_depend_cpu = ['max_worker_processes', 'max_parallel_workers',
                                  'max_parallel_workers_per_gather', 'max_parallel_maintenance_workers']
         return parameter_name in parameters_depend_cpu
-
-    def add_include_dir(self):
-        """
-        add parameter setting (include_dir = 'conf.d')
-        FIXME : Deleted at a later date because it is an unused function
-        """
-        add_param = "include_dir = 'conf.d'"
-        with open(self.config_path, 'a') as f:
-            print(add_param, file=f)
-
-        # mkdir conf.d
-        include_dir = os.path.join(self.postgres_server_config.pgdata, 'conf.d')
-        os.makedirs(include_dir, exist_ok=True)
-
-        # change owner
-        change_owner_cmd = 'sudo chown {}:{} {}'.format(self.postgres_server_config.os_user,
-                                                        self.postgres_server_config.os_user, include_dir)
-        run_command(change_owner_cmd)
-
-        # restart postgreSQL
-        self._restart_postgres()
-
-    def _restart_postgres(self):
-        """
-        Restart PostgreSQL.
-        FIXME : Deleted at a later date because it is an unused function
-        """
-        # localhost PostgreSQL
-        if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
-            restart_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} -w restart'.format(
-                self.postgres_server_config.os_user, self.postgres_server_config.pgbin,
-                self.postgres_server_config.pgdata)
-            run_command(restart_database_cmd)
-        else:
-            raise NotImplementedError('This function does not support remote PostgreSQL.')
