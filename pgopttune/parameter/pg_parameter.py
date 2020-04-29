@@ -209,7 +209,7 @@ class Parameter:
             return json.load(f)
 
     @staticmethod
-    def create_tune_parameter_json(host, major_version, params_json_dir='./conf'):
+    def create_tune_parameter_json(host, major_version, params_json_dir='./conf', estimate_max_wal_size=None):
         hardware = HardwareResource(host=host)
         tune_parameter_json_path = '{}/version-{}.json'.format(params_json_dir, major_version)
         tune_parameter_json_backup_path = '{}/version-{}.json.org'.format(params_json_dir, major_version)
@@ -222,13 +222,23 @@ class Parameter:
             elif Parameter.check_parameter_maxvalue_depend_cpu(tune_parameter['name']):
                 tune_parameters[index]['tuning_range']['maxval'] = int(hardware.cpu_count)
 
+            elif (estimate_max_wal_size is not None) and (tune_parameter['name'] == 'max_wal_size'):
+                tune_parameters[index]['tuning_range']['minval'] = estimate_max_wal_size
+                tune_parameters[index]['tuning_range']['maxval'] = estimate_max_wal_size
+
+            elif (estimate_max_wal_size is not None) and (tune_parameter['name'] == 'checkpoint_timeout'):
+                # Set the wal_max_size parameter to control check pointing,
+                # so that check pointing due to timeouts should not occur.
+                tune_parameters[index]['tuning_range']['minval'] = '1d'
+                tune_parameters[index]['tuning_range']['maxval'] = '1d'
+
         shutil.copyfile(tune_parameter_json_path, tune_parameter_json_backup_path)  # backup
         with open(tune_parameter_json_path, 'w') as f:
             json.dump(tune_parameters, f, indent=2)
 
     @staticmethod
     def check_parameter_maxvalue_depend_memory_size(parameter_name):
-        parameters_depend_memory_size = ['effective_cache_size', 'shared_buffers', 'max_wal_size', 'temp_buffers']
+        parameters_depend_memory_size = ['effective_cache_size', 'shared_buffers', 'temp_buffers']
         return parameter_name in parameters_depend_memory_size
 
     @staticmethod

@@ -30,13 +30,16 @@ class Recovery(Parameter):
     def estimate_max_wal_size(self):
         self.measurement_recovery_time()  # Measure WAL size and recovery time
         lr = linear_model.LinearRegression()  # Predict WAL size from recovery time using linear regression
-        lr.fit(self.x_recovery_time.reshape(-1, 1), self.y_recovery_wal_size.reshape(-1, 1))
-        required_recovery_time_second = np.array([[self.required_recovery_time_second]])
+        lr.fit(self.x_recovery_time.reshape(-1, 1).astype(np.float64),
+               self.y_recovery_wal_size.reshape(-1, 1).astype(np.float64))
+        required_recovery_time_second = np.array([[self.required_recovery_time_second]], dtype=np.float64)
         max_wal_size_estimate = lr.predict(required_recovery_time_second)[0][0]
         estimate_max_wal_size = (max_wal_size_estimate / 2)
         # Two to three checkpoints are performed within the WAL size specified in the max_wal_size parameter.
         # Therefore, we divide by 2 assuming the worst case.
         estimate_max_wal_size_mb = str(math.floor(estimate_max_wal_size / (1024 * 1024))) + 'MB'
+        logging.info("The maximum value of max_wal_size estimated based on the measured values is {}.".format(
+            estimate_max_wal_size_mb))
         return estimate_max_wal_size_mb
 
     def measurement_recovery_time(self):
@@ -51,6 +54,8 @@ class Recovery(Parameter):
             self._crash_database()
             self._free_cache()
             recovery_time = self._measurement_recovery_database_time()
+            logging.info('The wal size written after the checkpoint is {}B. '
+                         'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
             self.x_recovery_time = np.append(self.x_recovery_time, recovery_time)
             self.y_recovery_wal_size = np.append(self.y_recovery_wal_size, recovery_wal_size)
         self.reset_param()
@@ -109,7 +114,7 @@ class Recovery(Parameter):
                 cur.execute(get_recovery_wal_size_sql)
                 row = cur.fetchone()
                 recovery_wal_size = row['wa_size']
-        return recovery_wal_size
+        return float(recovery_wal_size)
 
     def _get_latest_checkpoint_lsn(self):
         if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
@@ -192,7 +197,7 @@ class Recovery(Parameter):
             if not ret['retval'] == 0:
                 raise ValueError('PostgreSQL start failed.\n'
                                  'start command : {}'.format(recovery_database_cmd))
-        return recovery_elapsed_time
+        return float(recovery_elapsed_time)
 
     @staticmethod
     def random_string(length):
