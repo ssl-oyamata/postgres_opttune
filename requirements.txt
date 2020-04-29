@@ -10,3 +10,4 @@ pandas
 jupyter
 pytest
 psutil
+tqdm

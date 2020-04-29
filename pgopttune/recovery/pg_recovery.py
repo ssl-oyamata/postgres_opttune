@@ -8,6 +8,7 @@ import string
 import traceback
 import subprocess
 import numpy as np
+from tqdm import tqdm
 from psycopg2.extras import DictCursor
 from sklearn import linear_model
 from pgopttune.parameter.pg_parameter import Parameter
@@ -48,17 +49,23 @@ class Recovery(Parameter):
         self._create_test_table()
         self.reset_database()
 
+        progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
         for i in measurement_rows:
             self._insert_test_data(i)  # insert test data
             recovery_wal_size = self._get_recovery_wal_size()
             self._crash_database()
             self._free_cache()
             recovery_time = self._measurement_recovery_database_time()
-            logging.info('The wal size written after the checkpoint is {}B. '
-                         'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
+            # logging.info('The wal size written after the checkpoint is {}B. '
+            #              'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
             self.x_recovery_time = np.append(self.x_recovery_time, recovery_time)
             self.y_recovery_wal_size = np.append(self.y_recovery_wal_size, recovery_wal_size)
+            progress_bar.update(i / 10000)
         self.reset_param()
+        progress_bar.close()
+        np.set_printoptions(precision=3)
+        logging.info("The wal size written after the checkpoint(Byte) : {}".format(self.y_recovery_wal_size))
+        logging.info("PostgreSQL Recovery time(Sec) : {}".format(self.x_recovery_time))
 
     def _create_test_table(self):
         create_table_sql = "CREATE TABLE IF NOT EXISTS " + self._test_table_name + "(id INT, test TEXT)"
