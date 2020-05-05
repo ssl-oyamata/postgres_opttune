@@ -31,11 +31,14 @@ def main(
     optuna.logging.enable_propagation()  # Propagate logs to the root logger.
 
     # Estimate the wal_max_size based on the recovery time allowed.
-    logger.info('Start to estimate the wal_max_size parameter. required_recovery_time_second = "{}s"'.format(
-        tune_config.required_recovery_time_second))
-    recovery = Recovery(postgres_server_config, tune_config.parameter_json_dir,
-                        tune_config.required_recovery_time_second)
-    estimate_max_wal_size_mb = recovery.estimate_max_wal_size()
+    if int(tune_config.required_recovery_time_second) != 0:
+        logger.info('Start to estimate the wal_max_size parameter. required_recovery_time_second = "{}s"'.format(
+            tune_config.required_recovery_time_second))
+        recovery = Recovery(postgres_server_config, tune_config.parameter_json_dir,
+                            tune_config.required_recovery_time_second)
+        estimate_max_wal_size_mb = recovery.estimate_max_wal_size()
+    else:
+        estimate_max_wal_size_mb = None
 
     # create tune parameter json
     # path : ./conf/version-<major-version>.json
