@@ -1,6 +1,5 @@
 import paramiko
 
-
 class SSHCommandExecutor:
 
     def __init__(self, user, password='postgres', hostname='localhost', port=22, timeout=15.0):
@@ -17,8 +16,8 @@ class SSHCommandExecutor:
     def __del__(self):
         self.client.close()
 
-    def exec(self, command, only_retval=True):
-        _, stdout, stderr = self.client.exec_command(command)
+    def exec(self, command, only_retval=True, environment_dict=None):
+        _, stdout, stderr = self.client.exec_command(command, environment=environment_dict)
         if only_retval:
             return {'stdout': None,
                     'stderr': None,

@@ -43,14 +43,18 @@ class Recovery(Parameter):
             estimate_max_wal_size_mb))
         return estimate_max_wal_size_mb
 
-    def measurement_recovery_time(self):
-        measurement_rows = np.array([100000, 200000, 300000, 400000])  # measurement pattern
+    def measurement_recovery_time(self, measurement_rows_scale=100000, measurement_pattern=4):
+        # measurement pattern
+        measurement_rows = np.arange(measurement_rows_scale, measurement_rows_scale * (measurement_pattern + 1),
+                                     measurement_rows_scale)
+        sum_measurement_rows = np.sum(measurement_rows)
         self._no_checkpoint_settings()
         self._create_test_table()
         self.reset_database()
 
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
         for i in measurement_rows:
+            self._truncate_test_table() # truncate test table
             self._insert_test_data(i)  # insert test data
             recovery_wal_size = self._get_recovery_wal_size()
             self._crash_database()
@@ -60,7 +64,8 @@ class Recovery(Parameter):
             #              'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
             self.x_recovery_time = np.append(self.x_recovery_time, recovery_time)
             self.y_recovery_wal_size = np.append(self.y_recovery_wal_size, recovery_wal_size)
-            progress_bar.update(i / 10000)
+            progress_bar.update(i / sum_measurement_rows * 100)
+
         self.reset_param()
         progress_bar.close()
         np.set_printoptions(precision=3)
@@ -69,6 +74,18 @@ class Recovery(Parameter):
 
     def _create_test_table(self):
         create_table_sql = "CREATE TABLE IF NOT EXISTS " + self._test_table_name + "(id INT, test TEXT)"
+        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
+                                              pgport=self.postgres_server_config.port,
+                                              pguser=self.postgres_server_config.user,
+                                              pgpassword=self.postgres_server_config.password,
+                                              pgdatabase=self.postgres_server_config.database
+                                              )) as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as cur:
+                cur.execute(create_table_sql)
+
+    def _truncate_test_table(self):
+        create_table_sql = "TRUNCATE " + self._test_table_name
         with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
                                               pgport=self.postgres_server_config.port,
                                               pguser=self.postgres_server_config.user,
@@ -154,7 +171,7 @@ class Recovery(Parameter):
                                      password=self.postgres_server_config.ssh_password,
                                      hostname=self.postgres_server_config.host,
                                      port=self.postgres_server_config.ssh_port)
-            ret = ssh.exec(recovery_database_cmd, only_retval=False)
+            ret = ssh.exec(recovery_database_cmd, only_retval=False, environment_dict={'LANG': 'C'})
             if not ret['retval'] == 0:
                 raise ValueError('Get latest checkpoint lsn command failed.\n'
                                  'Failed command : {}'.format(recovery_database_cmd))
