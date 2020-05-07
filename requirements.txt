@@ -1,5 +1,6 @@
 optuna==1.3.0
 scipy==1.3.2
+scikit-learn
 scikit-optimize
 cma
 paramiko
@@ -9,3 +10,4 @@ pandas
 jupyter
 pytest
 psutil
+tqdm

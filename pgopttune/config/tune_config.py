@@ -11,6 +11,10 @@ class TuneConfig(Config):
         return self.get_parameter_value('study_name')
 
     @property
+    def required_recovery_time_second(self):
+        return self.get_parameter_value('required_recovery_time_second')
+
+    @property
     def benchmark(self):
         return self.get_parameter_value('benchmark')
 
