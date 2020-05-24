@@ -230,7 +230,7 @@ Item numbers 1 to 10 of the installation method are the same as pgbench.
 ## Test Platforms
 |Category|Module Name|
 |:--|:--:|
-|OS|CentOS Linux release 7.6.1810|
+|OS|CentOS Linux release 7.8.2003|
 |DBMS|PostgreSQL 12|
 |Python|3.6|
 
