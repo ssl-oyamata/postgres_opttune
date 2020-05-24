@@ -9,12 +9,13 @@ from pgopttune.utils.unit import get_param_raw, format_bytes_str, format_millise
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
 from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
+from pgopttune.config.postgres_server_config import PostgresServerConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Parameter:
-    def __init__(self, postgres_server_config, params_json_dir='./conf'):
+    def __init__(self, postgres_server_config: PostgresServerConfig, params_json_dir='./conf'):
         self.postgres_server_config = postgres_server_config
         self.config_path = os.path.join(self.postgres_server_config.pgdata, 'postgresql.conf')
         self.tune_parameters_json_path = '{}/version-{}.json'.format(params_json_dir,

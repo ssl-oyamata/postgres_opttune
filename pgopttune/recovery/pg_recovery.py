@@ -15,12 +15,16 @@ from pgopttune.parameter.pg_parameter import Parameter
 from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
+from pgopttune.config.postgres_server_config import PostgresServerConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Recovery(Parameter):
-    def __init__(self, postgres_server_config, params_json_dir='./conf', required_recovery_time_second=300):
+    def __init__(self,
+                 postgres_server_config: PostgresServerConfig,
+                 params_json_dir='./conf',
+                 required_recovery_time_second=300):
         super().__init__(postgres_server_config, params_json_dir)
         self._test_table_name = "recovery_time_test"
         os.environ['LANG'] = 'C'
@@ -54,7 +58,7 @@ class Recovery(Parameter):
 
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
         for i in measurement_rows:
-            self._truncate_test_table() # truncate test table
+            self._truncate_test_table()  # truncate test table
             self._insert_test_data(i)  # insert test data
             recovery_wal_size = self._get_recovery_wal_size()
             self._crash_database()

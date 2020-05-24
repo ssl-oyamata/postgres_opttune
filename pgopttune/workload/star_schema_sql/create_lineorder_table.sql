@@ -1,0 +1,26 @@
+CREATE TABLE IF NOT EXISTS lineorder
+(
+    lo_orderkey      BIGINT,
+    lo_linenumber    INTEGER,
+    lo_custkey       INTEGER,
+    lo_partkey       INTEGER,
+    lo_suppkey       INTEGER,
+    lo_orderdate     DATE,
+    lo_orderpriority CHAR(15),
+    lo_shippriority  CHAR(1),
+    lo_quantity      INTEGER,
+    lo_extendedprice NUMERIC,
+    lo_ordtotalprice NUMERIC,
+    lo_discount      NUMERIC,
+    lo_revenue       NUMERIC,
+    lo_supplycost    NUMERIC,
+    lo_tax           NUMERIC,
+    lo_commitdate    DATE,
+    lo_shipmod       CHAR(10),
+    not_use            TEXT,
+    CONSTRAINT lo_pkey PRIMARY KEY (lo_orderkey, lo_linenumber),
+    FOREIGN KEY (lo_custkey) REFERENCES customer (c_custkey),
+    FOREIGN KEY (lo_partkey) REFERENCES part (p_partkey),
+    FOREIGN KEY (lo_suppkey) REFERENCES supplier (s_suppkey),
+    FOREIGN KEY (lo_orderdate) REFERENCES date (d_datekey)
+);

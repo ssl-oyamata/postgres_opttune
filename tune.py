@@ -9,13 +9,15 @@ from pgopttune.sampler.sampler import get_sampler
 from pgopttune.study.study import create_study
 from pgopttune.objective.objective_pgbench import ObjectivePgbench
 from pgopttune.objective.objective_oltpbench import ObjectiveOltpbench
+from pgopttune.objective.objective_star_schema_benchmark import ObjectiveStarSchemaBenchmark
 from pgopttune.parameter.reset import reset_postgres_param
 from pgopttune.parameter.pg_parameter import Parameter
 from pgopttune.recovery.pg_recovery import Recovery
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
-from pgopttune.config.oltpbench_config import OltpbenchConfig
 from pgopttune.config.pgbench_config import PgbenchConfig
+from pgopttune.config.oltpbench_config import OltpbenchConfig
+from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
 
 
 def main(
@@ -29,6 +31,7 @@ def main(
     logging.config.dictConfig(logging_dict(debug=strtobool(tune_config.debug)))
     logger = logging.getLogger(__name__)
     optuna.logging.enable_propagation()  # Propagate logs to the root logger.
+    optuna.logging.disable_default_handler()  # Stop showing logs in sys.stderr.
 
     # Estimate the wal_max_size based on the recovery time allowed.
     if int(tune_config.required_recovery_time_second) != 0:
@@ -56,6 +59,10 @@ def main(
     elif tune_config.benchmark == 'oltpbench':
         oltpbench_config = OltpbenchConfig(conf_path)  # oltpbench config
         objective = ObjectiveOltpbench(postgres_server_config, tune_config, oltpbench_config)
+    # star schema benchmark
+    elif tune_config.benchmark == 'star_schema_benchmark':
+        star_schema_benchmark_config = StarSchemaBenchmarkConfig(conf_path)  # star schema benchmark config
+        objective = ObjectiveStarSchemaBenchmark(postgres_server_config, tune_config, star_schema_benchmark_config)
     else:
         raise NotImplementedError('This benchmark tool is not supported at this time.')
 

@@ -5,12 +5,14 @@ import traceback
 import subprocess
 from .workload import Workload
 from pgopttune.utils.command import run_command
+from pgopttune.config.postgres_server_config import PostgresServerConfig
+from pgopttune.config.oltpbench_config import OltpbenchConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Oltpbench(Workload):
-    def __init__(self, postgres_server_config, oltpbench_config):
+    def __init__(self, postgres_server_config: PostgresServerConfig, oltpbench_config: OltpbenchConfig):
         super().__init__(postgres_server_config)
         self.oltpbench_config = oltpbench_config
 
