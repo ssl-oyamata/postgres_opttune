@@ -25,7 +25,8 @@ When tuning using pgbench, perform the following procedure.
 
 1. python3 install
 ```
-# yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+# yum install -y https://repo.ius.io/ius-release-el7.rpm \
+  https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 # yum install -y python36u python36u-devel python36u-libs python36u-pip
 # pip3 install --upgrade pip setuptools
 ```
@@ -42,6 +43,7 @@ When tuning using pgbench, perform the following procedure.
 
 4. PostgreSQL install
 ```
+# yum install -y epel-release centos-release-scl
 # yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 # yum install -y postgresql12 postgresql12-server postgresql12-libs postgresql12-contrib  postgresql12-devel
 ```
@@ -77,7 +79,12 @@ $ exit
     postgres        ALL=(ALL)       NOPASSWD: ALL
 ```
 
-9. Set conditions for optimization with pgbench workload
+9. set postgres user password
+```
+# passwd postgres 
+```
+
+10. Set conditions for optimization with pgbench workload
 ```
 # vi ~/postgres_opttune/conf/postgres_opttune.conf
 
@@ -114,15 +121,15 @@ best param : {'bgwriter_lru_maxpages': 355, 'checkpoint_completion_target': 0.55
 ### Installation(Oltpbenchmark)
 When using oltpbenchmark, perform the following procedure.
 
-Item numbers 1 to 8 of the installation method are the same as pgbench.
+Item numbers 1 to 10 of the installation method are the same as pgbench.
 
-9. Oltpbenchmark install
+11. Oltpbenchmark install
 ```
 # yum install -y wget
 # yum install -y java-1.8.0-openjdk-devel  
 # wget http://ftp.yz.yamagata-u.ac.jp/pub/network/apache//ant/binaries/apache-ant-1.10.7-bin.tar.gz -P /usr/local/src 
 # tar zxvf /usr/local/src/apache-ant-1.10.7-bin.tar.gz -C /opt  
-# ln -s /usr/local/src/apache-ant-1.10.7 /opt/ant
+# ln -s /opt/apache-ant-1.10.7 /opt/ant
 # export PATH=$PATH:/opt/ant/bin
 # cd /opt
 # git clone https://github.com/oltpbenchmark/oltpbench  
@@ -132,7 +139,7 @@ Item numbers 1 to 8 of the installation method are the same as pgbench.
 # ant build
 ```
 
-10. Set conditions for optimization with oltpbench workload
+12. Set conditions for optimization with oltpbench workload
 ```
 # vi ~/postgres_opttune/conf/postgres_opttune.conf
 
@@ -148,7 +155,7 @@ Item numbers 1 to 8 of the installation method are the same as pgbench.
     oltpbench_config_path = ./conf/tpcc_config_postgres.xml # config path
 ```
 
-11. Edit oltpbench settings
+13. Edit oltpbench settings
 ```
 # vi ~/postgres_opttune/conf/tpcc_config_postgres.xml
 
@@ -163,7 +170,7 @@ Item numbers 1 to 8 of the installation method are the same as pgbench.
           <time>1800</time>  # observation time is 30 mins
 ```
 
-12. Edit max_connections in postgresql.conf according to the number of concurrent connections for the oltpbench workload
+14. Edit max_connections in postgresql.conf according to the number of concurrent connections for the oltpbench workload
 ```
 # vi /var/lib/pgsql/12/data/postgresql.conf
 
@@ -184,9 +191,9 @@ $ exit
 ### Installation(StarSchemaBenchmark)
 When use StarSchemaBenchmark, perform the following procedure.
 
-Item numbers 1 to 8 of the installation method are the same as pgbench.
+Item numbers 1 to 10 of the installation method are the same as pgbench.
 
-9. ssb-dbgen install
+11. ssb-dbgen install
 ```
 # cd /opt
 # git clone https://github.com/greenlion/ssb-dbgen
@@ -194,7 +201,7 @@ Item numbers 1 to 8 of the installation method are the same as pgbench.
 # make
 ```
 
-10. Settings StarSchemaBenchmark workload
+12. Settings StarSchemaBenchmark workload
 ```
 # vi ~/postgres_opttune/conf/postgres_opttune.conf
 
