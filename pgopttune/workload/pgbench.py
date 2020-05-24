@@ -5,12 +5,14 @@ import traceback
 import subprocess
 from .workload import Workload
 from pgopttune.utils.command import run_command
+from pgopttune.config.postgres_server_config import PostgresServerConfig
+from pgopttune.config.pgbench_config import PgbenchConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Pgbench(Workload):
-    def __init__(self, postgres_server_config, pgbench_config):
+    def __init__(self, postgres_server_config: PostgresServerConfig, pgbench_config: PgbenchConfig):
         super().__init__(postgres_server_config)
         self.pgbench_config = pgbench_config
         os.environ['PGPASSWORD'] = postgres_server_config.password

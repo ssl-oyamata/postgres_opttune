@@ -1,13 +1,15 @@
 import logging
 from pgopttune.parameter.pg_parameter import Parameter
+from pgopttune.config.postgres_server_config import PostgresServerConfig
+from pgopttune.config.tune_config import TuneConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Objective:
     def __init__(self,
-                 postgres_server_config,
-                 tune_config
+                 postgres_server_config: PostgresServerConfig,
+                 tune_config: TuneConfig
                  ):
         self.params = Parameter(postgres_server_config,  # turning parameter
                                 params_json_dir=tune_config.parameter_json_dir)

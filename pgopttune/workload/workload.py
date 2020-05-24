@@ -1,12 +1,13 @@
 import logging
 import optuna
 from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
+from pgopttune.config.postgres_server_config import PostgresServerConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Workload:
-    def __init__(self, postgres_server_config):
+    def __init__(self, postgres_server_config: PostgresServerConfig):
         self.postgres_server_config = postgres_server_config
 
     def vacuum_database(self):

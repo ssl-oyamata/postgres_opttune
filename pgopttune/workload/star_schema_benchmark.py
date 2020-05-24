@@ -2,10 +2,10 @@ import os
 import time
 import logging
 from multiprocessing import Pool
-from pgopttune.config.postgres_server_config import PostgresServerConfig
-from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
 from pgopttune.workload.workload import Workload
 from pgopttune.utils.command import run_command
+from pgopttune.config.postgres_server_config import PostgresServerConfig
+from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
 
 logger = logging.getLogger(__name__)
 
