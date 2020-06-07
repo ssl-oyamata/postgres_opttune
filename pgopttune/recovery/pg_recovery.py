@@ -11,7 +11,7 @@ import numpy as np
 from tqdm import tqdm
 from psycopg2.extras import DictCursor
 from sklearn import linear_model
-from pgopttune.parameter.pg_parameter import Parameter
+from pgopttune.parameter.pg_parameter import PostgresParameter
 from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
@@ -20,12 +20,11 @@ from pgopttune.config.postgres_server_config import PostgresServerConfig
 logger = logging.getLogger(__name__)
 
 
-class Recovery(Parameter):
+class Recovery(PostgresParameter):
     def __init__(self,
                  postgres_server_config: PostgresServerConfig,
-                 params_json_dir='./conf',
                  required_recovery_time_second=300):
-        super().__init__(postgres_server_config, params_json_dir)
+        super().__init__(postgres_server_config)
         self._test_table_name = "recovery_time_test"
         os.environ['LANG'] = 'C'
         self.required_recovery_time_second = required_recovery_time_second
@@ -237,5 +236,5 @@ if __name__ == "__main__":
 
     conf_path = '../../conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
-    recovery = Recovery(postgres_server_config_test, params_json_dir='../../conf', required_recovery_time_second=300)
+    recovery = Recovery(postgres_server_config_test, required_recovery_time_second=300)
     print(recovery.estimate_max_wal_size())

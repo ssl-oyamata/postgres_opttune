@@ -1,5 +1,5 @@
 import logging
-from pgopttune.parameter.pg_parameter import Parameter
+from pgopttune.parameter.pg_tune_parameter import PostgresTuneParameter
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
 
@@ -11,8 +11,8 @@ class Objective:
                  postgres_server_config: PostgresServerConfig,
                  tune_config: TuneConfig
                  ):
-        self.params = Parameter(postgres_server_config,  # turning parameter
-                                params_json_dir=tune_config.parameter_json_dir)
+        self.params = PostgresTuneParameter(postgres_server_config,  # turning parameter
+                                            params_json_dir=tune_config.parameter_json_dir)
         self.data_load_interval = tune_config.data_load_interval
         self.workload = None
 
