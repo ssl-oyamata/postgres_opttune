@@ -37,7 +37,7 @@ def main(
     if int(tune_config.required_recovery_time_second) != 0:
         logger.info('Start to estimate the wal_max_size parameter. required_recovery_time_second = "{}s"'.format(
             tune_config.required_recovery_time_second))
-        recovery = Recovery(postgres_server_config, tune_config.parameter_json_dir,
+        recovery = Recovery(postgres_server_config,
                             tune_config.required_recovery_time_second)
         estimate_max_wal_size_mb = recovery.estimate_max_wal_size()
     else:
