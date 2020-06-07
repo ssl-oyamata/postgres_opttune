@@ -11,3 +11,4 @@ jupyter
 pytest
 psutil
 tqdm
+numpy

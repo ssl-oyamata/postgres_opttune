@@ -1,6 +1,5 @@
 import logging
-import optuna
-from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
+from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 
 logger = logging.getLogger(__name__)
@@ -15,24 +14,14 @@ class Workload:
         run vacuum analyze
         """
         vacuum_analyze_sql = "VACUUM ANALYZE"
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
                 cur.execute(vacuum_analyze_sql)
 
     def execute_sql_file(self, sql_filepath):
         logger.debug("start execute {}".format(sql_filepath))
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
                 cur.execute(open(sql_filepath, "r").read())

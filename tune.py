@@ -11,7 +11,7 @@ from pgopttune.objective.objective_pgbench import ObjectivePgbench
 from pgopttune.objective.objective_oltpbench import ObjectiveOltpbench
 from pgopttune.objective.objective_star_schema_benchmark import ObjectiveStarSchemaBenchmark
 from pgopttune.parameter.reset import reset_postgres_param
-from pgopttune.parameter.pg_parameter import Parameter
+from pgopttune.parameter.pg_tune_parameter import PostgresTuneParameter
 from pgopttune.recovery.pg_recovery import Recovery
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
@@ -37,7 +37,7 @@ def main(
     if int(tune_config.required_recovery_time_second) != 0:
         logger.info('Start to estimate the wal_max_size parameter. required_recovery_time_second = "{}s"'.format(
             tune_config.required_recovery_time_second))
-        recovery = Recovery(postgres_server_config, tune_config.parameter_json_dir,
+        recovery = Recovery(postgres_server_config,
                             tune_config.required_recovery_time_second)
         estimate_max_wal_size_mb = recovery.estimate_max_wal_size()
     else:
@@ -45,10 +45,10 @@ def main(
 
     # create tune parameter json
     # path : ./conf/version-<major-version>.json
-    Parameter.create_tune_parameter_json(postgres_server_config.host,
-                                         postgres_server_config.major_version,
-                                         params_json_dir=tune_config.parameter_json_dir,
-                                         estimate_max_wal_size=estimate_max_wal_size_mb)
+    PostgresTuneParameter.create_tune_parameter_json(postgres_server_config.host,
+                                                 postgres_server_config.major_version,
+                                                 params_json_dir=tune_config.parameter_json_dir,
+                                                 estimate_max_wal_size=estimate_max_wal_size_mb)
 
     logger.info('Run benchmark : {}'.format(tune_config.benchmark))
     # pgbench
