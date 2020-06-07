@@ -6,7 +6,7 @@ from pgopttune.workload.workload import Workload
 from pgopttune.utils.command import run_command
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
-from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
+from pgopttune.utils.pg_connect import get_pg_connection
 
 logger = logging.getLogger(__name__)
 
@@ -67,12 +67,7 @@ class StarSchemaBenchmark(Workload):
         else:
             for table_name in self.ssb_config.table_list:
                 data_filepath = os.path.join("/tmp", table_name + ".tbl")
-                with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                                      pgport=self.postgres_server_config.port,
-                                                      pguser=self.postgres_server_config.user,
-                                                      pgpassword=self.postgres_server_config.password,
-                                                      pgdatabase=self.postgres_server_config.database
-                                                      )) as conn:
+                with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
                     conn.set_session(autocommit=True)
                     with conn.cursor() as cur:
                         with open(data_filepath) as f:

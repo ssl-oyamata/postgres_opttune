@@ -1,7 +1,7 @@
 import paramiko
 
-class SSHCommandExecutor:
 
+class SSHCommandExecutor:
     def __init__(self, user, password='postgres', hostname='localhost', port=22, timeout=15.0):
         self.hostname = hostname
         self.port = port
@@ -33,7 +33,7 @@ class SSHCommandExecutor:
 
 if __name__ == "__main__":
     ssh = SSHCommandExecutor(hostname='127.0.0.1', user='postgres', password='postgres')
-    ret = ssh.exec('ls /tmp ; ls /tmp')
+    # ret = ssh.exec('ls /tmp ; ls /tmp')
     ret = ssh.exec('/usr/pgsql-12/bin/pg_ctl -D /var/lib/pgsql/12/data/ restart')
     if not ret['retval'] == 0:
         raise Exception('command failed')

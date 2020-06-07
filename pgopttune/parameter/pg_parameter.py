@@ -3,7 +3,7 @@ import logging
 import psycopg2
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
-from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
+from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 
 logger = logging.getLogger(__name__)
@@ -20,12 +20,7 @@ class PostgresParameter:
         # postgresql.auto.conf clear
         alter_system_sql = "ALTER SYSTEM RESET ALL"
         # use psycopg2
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
                 cur.execute(alter_system_sql)
@@ -64,12 +59,7 @@ class PostgresParameter:
         # use psycopg2
         for i in range(max_retry + 1):
             try:
-                with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                                      pgport=self.postgres_server_config.port,
-                                                      pguser=self.postgres_server_config.user,
-                                                      pgpassword=self.postgres_server_config.password,
-                                                      pgdatabase=self.postgres_server_config.database
-                                                      )) as conn:
+                with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
                     with conn.cursor() as cur:
                         cur.execute(is_in_recovery_sql)
                         result = cur.fetchone()

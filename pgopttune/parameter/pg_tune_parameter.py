@@ -4,7 +4,7 @@ import logging
 import shutil
 from pgopttune.resource.hardware import HardwareResource
 from pgopttune.utils.unit import get_param_raw, format_bytes_str, format_milliseconds_str
-from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
+from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.parameter.pg_parameter import PostgresParameter
 
@@ -51,12 +51,7 @@ class PostgresTuneParameter(PostgresParameter):
             param_name, param_trial_value = self._convert_trial_value_unit(param_trial)
             alter_system_sql = "ALTER SYSTEM SET {} = '{}'".format(param_name, param_trial_value)
             # use psycopg2
-            with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                                  pgport=self.postgres_server_config.port,
-                                                  pguser=self.postgres_server_config.user,
-                                                  pgpassword=self.postgres_server_config.password,
-                                                  pgdatabase=self.postgres_server_config.database
-                                                  )) as conn:
+            with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
                 conn.set_session(autocommit=True)
                 with conn.cursor() as cur:
                     cur.execute(alter_system_sql)

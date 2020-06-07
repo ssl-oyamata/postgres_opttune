@@ -1,4 +1,5 @@
 from pgopttune.config.config import Config
+from pgopttune.utils.pg_connect import get_pg_dsn
 
 
 class PostgresServerConfig(Config):
@@ -37,6 +38,11 @@ class PostgresServerConfig(Config):
     @property
     def database(self):
         return self.get_parameter_value('pgdatabase')
+
+    @property
+    def dsn(self):
+        return get_pg_dsn(pghost=self.host, pgport=self.port, pgdatabase=self.database,
+                          pguser=self.user, pgpassword=self.password)
 
     @property
     def os_user(self):

@@ -12,7 +12,7 @@ from tqdm import tqdm
 from psycopg2.extras import DictCursor
 from sklearn import linear_model
 from pgopttune.parameter.pg_parameter import PostgresParameter
-from pgopttune.utils.pg_connect import get_pg_dsn, get_pg_connection
+from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
 from pgopttune.config.postgres_server_config import PostgresServerConfig
@@ -77,35 +77,20 @@ class Recovery(PostgresParameter):
 
     def _create_test_table(self):
         create_table_sql = "CREATE TABLE IF NOT EXISTS " + self._test_table_name + "(id INT, test TEXT)"
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
                 cur.execute(create_table_sql)
 
     def _truncate_test_table(self):
         create_table_sql = "TRUNCATE " + self._test_table_name
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
                 cur.execute(create_table_sql)
 
     def _insert_test_data(self, row=1, data_size=1024):
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             for i in range(1, row + 1):
                 test_column_data = self.random_string(data_size)
                 insert_sql = "INSERT INTO {} VALUES({}, '{}')".format(self._test_table_name, i, test_column_data)
@@ -116,12 +101,7 @@ class Recovery(PostgresParameter):
     def _no_checkpoint_settings(self):
         no_checkpoint_timeout_sql = "ALTER SYSTEM SET checkpoint_timeout TO '1d'"
         no_checkpoint_wal_size_sql = "ALTER SYSTEM set max_wal_size TO '10TB'"
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
                 cur.execute(no_checkpoint_timeout_sql)
@@ -131,12 +111,7 @@ class Recovery(PostgresParameter):
         latest_checkpoint_lsn = self._get_latest_checkpoint_lsn()
         get_recovery_wal_size_sql = "SELECT pg_current_wal_insert_lsn() - '{}'::pg_lsn AS wa_size".format(
             latest_checkpoint_lsn)
-        with get_pg_connection(dsn=get_pg_dsn(pghost=self.postgres_server_config.host,
-                                              pgport=self.postgres_server_config.port,
-                                              pguser=self.postgres_server_config.user,
-                                              pgpassword=self.postgres_server_config.password,
-                                              pgdatabase=self.postgres_server_config.database
-                                              )) as conn:
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             with conn.cursor(cursor_factory=DictCursor) as cur:
                 cur.execute(get_recovery_wal_size_sql)
                 row = cur.fetchone()
