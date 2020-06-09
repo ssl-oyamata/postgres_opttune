@@ -1,4 +1,5 @@
 import os
+import setuptools
 from setuptools import setup
 
 
@@ -12,10 +13,10 @@ def read_requirements():
 
 setup(
     name="pgopttune",
-    version="0.1",
+    version="0.11",
     description='Trying PostgreSQL parameter tuning using machine learning',
     author="postgres-opttune development team",
     url='https://github.com/ssl-oyamata/postgres_opttune',
     license='Apache License 2.0',
-    install_requires=read_requirements(),
+    packages=setuptools.find_packages(),
 )
