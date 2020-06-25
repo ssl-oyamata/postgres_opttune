@@ -18,5 +18,6 @@ setup(
     author="postgres-opttune development team",
     url='https://github.com/ssl-oyamata/postgres_opttune',
     license='Apache License 2.0',
+    install_requires=read_requirements(),
     packages=setuptools.find_packages(),
 )
