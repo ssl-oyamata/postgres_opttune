@@ -1,5 +1,5 @@
 import paramiko
-
+import scp
 
 class SSHCommandExecutor:
     def __init__(self, user, password='postgres', hostname='localhost', port=22, timeout=15.0):
@@ -29,6 +29,10 @@ class SSHCommandExecutor:
             return {'stdout': stdout.readlines(),
                     'stderr': stderr.readlines(),
                     'retval': stdout.channel.recv_exit_status()}
+
+    def get(self, remote_path=None, local_path=None):
+        with scp.SCPClient(self.client.get_transport()) as scpc:
+            scpc.get(remote_path, local_path)
 
 
 if __name__ == "__main__":

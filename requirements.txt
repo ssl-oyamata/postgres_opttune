@@ -4,6 +4,7 @@ scikit-learn
 scikit-optimize
 cma
 paramiko
+scp
 psycopg2
 plotly
 pandas

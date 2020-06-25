@@ -1,6 +1,7 @@
 import time
 import logging
 import psycopg2
+from psycopg2.extras import DictCursor
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
 from pgopttune.utils.pg_connect import get_pg_connection
@@ -12,6 +13,28 @@ logger = logging.getLogger(__name__)
 class PostgresParameter:
     def __init__(self, postgres_server_config: PostgresServerConfig):
         self.postgres_server_config = postgres_server_config
+
+    def get_parameter_value(self, param_name=None):
+        if param_name is None:
+            raise ValueError('Parameter name is not specified.')
+        get_parameter_value_sql = "SELECT setting FROM pg_catalog.pg_settings WHERE name = %s"
+        # use psycopg2
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
+            with conn.cursor(cursor_factory=DictCursor) as cur:
+                cur.execute(get_parameter_value_sql, (param_name,))
+                row = cur.fetchone()
+        return row['setting']
+
+    def set_parameter(self, param_name=None, param_value=None, pg_reload=False):
+        if param_name is None or param_value is None:
+            raise ValueError('Parameter or Value is not specified.')
+        alter_system_sql = "ALTER SYSTEM SET {} = '{}'".format(param_name, param_value)
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
+            with conn.cursor(cursor_factory=DictCursor) as cur:
+                conn.set_session(autocommit=True)
+                cur.execute(alter_system_sql)
+        if pg_reload:
+            self._reload_conf()
 
     def reset_param(self):
         """
@@ -74,6 +97,14 @@ class PostgresParameter:
                 time.sleep(sleep_time)
 
         raise TimeoutError('PostgreSQL startup did not complete.')
+
+    def _reload_conf(self):
+        reload_sql = "SELECT pg_reload_conf()"
+        # use psycopg2
+        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as cur:
+                cur.execute(reload_sql)
 
     def _free_cache(self):
         free_cache_cmd = 'sudo bash -c "sync"; sudo bash -c "echo 1 > /proc/sys/vm/drop_caches"'
