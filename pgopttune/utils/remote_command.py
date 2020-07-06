@@ -1,6 +1,7 @@
 import paramiko
 import scp
 
+
 class SSHCommandExecutor:
     def __init__(self, user, password='postgres', hostname='localhost', port=22, timeout=15.0):
         self.hostname = hostname

@@ -37,8 +37,8 @@ class Objective:
         if (int(trial.number) == 0) or (int(trial.number) % self.data_load_interval == 0):
             self.workload.data_load()  # data load
         self.params.reset_database()  # cache free and database restart
-        tps = self.workload.run()  # benchmark run
-        return tps
+        objective_value = self.workload.run()  # benchmark run
+        return objective_value
 
     def reset_param(self):
         # reset parameter value(reset postgresql.auto.conf)

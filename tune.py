@@ -10,6 +10,7 @@ from pgopttune.study.study import create_study
 from pgopttune.objective.objective_pgbench import ObjectivePgbench
 from pgopttune.objective.objective_oltpbench import ObjectiveOltpbench
 from pgopttune.objective.objective_star_schema_benchmark import ObjectiveStarSchemaBenchmark
+from pgopttune.objective.objective_my_workload import ObjectiveMyWorkload
 from pgopttune.parameter.reset import reset_postgres_param
 from pgopttune.parameter.pg_tune_parameter import PostgresTuneParameter
 from pgopttune.recovery.pg_recovery import Recovery
@@ -18,6 +19,7 @@ from pgopttune.config.tune_config import TuneConfig
 from pgopttune.config.pgbench_config import PgbenchConfig
 from pgopttune.config.oltpbench_config import OltpbenchConfig
 from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
+from pgopttune.config.my_workload_config import MyWorkloadConfig
 
 
 def main(
@@ -46,9 +48,9 @@ def main(
     # create tune parameter json
     # path : ./conf/version-<major-version>.json
     PostgresTuneParameter.create_tune_parameter_json(postgres_server_config.host,
-                                                 postgres_server_config.major_version,
-                                                 params_json_dir=tune_config.parameter_json_dir,
-                                                 estimate_max_wal_size=estimate_max_wal_size_mb)
+                                                     postgres_server_config.major_version,
+                                                     params_json_dir=tune_config.parameter_json_dir,
+                                                     estimate_max_wal_size=estimate_max_wal_size_mb)
 
     logger.info('Run benchmark : {}'.format(tune_config.benchmark))
     # pgbench
@@ -63,6 +65,10 @@ def main(
     elif tune_config.benchmark == 'star_schema_benchmark':
         star_schema_benchmark_config = StarSchemaBenchmarkConfig(conf_path)  # star schema benchmark config
         objective = ObjectiveStarSchemaBenchmark(postgres_server_config, tune_config, star_schema_benchmark_config)
+    # my workload (save using sampling_workload.py)
+    elif tune_config.benchmark == 'my_workload':
+        my_workload_config = MyWorkloadConfig(conf_path)  # my worklod config config
+        objective = ObjectiveMyWorkload(postgres_server_config, tune_config, my_workload_config)
     else:
         raise NotImplementedError('This benchmark tool is not supported at this time.')
 
@@ -70,11 +76,23 @@ def main(
     # tuning using optuna
     try:
         sampler = get_sampler(tune_config.sample_mode)  # sampler setting
-        study = create_study(study_name=tune_config.study_name,  # create study
-                             sampler=sampler,
-                             save_study_history=strtobool(tune_config.save_study_history),
-                             load_study_history=strtobool(tune_config.load_study_history),
-                             history_database_url=tune_config.history_database_url)
+        if tune_config.benchmark == 'my_workload':
+            logger.info("The purpose of optimization is to minimize the total SQL execution time")
+            study = create_study(study_name=tune_config.study_name,  # create study
+                                 sampler=sampler,
+                                 save_study_history=strtobool(tune_config.save_study_history),
+                                 load_study_history=strtobool(tune_config.load_study_history),
+                                 direction='minimize',
+                                 history_database_url=tune_config.history_database_url)
+        else:
+            logger.info("The purpose of optimization is to maximize TPS")
+            study = create_study(study_name=tune_config.study_name,  # create study
+                                 sampler=sampler,
+                                 save_study_history=strtobool(tune_config.save_study_history),
+                                 load_study_history=strtobool(tune_config.load_study_history),
+                                 direction='maximize',
+                                 history_database_url=tune_config.history_database_url)
+
         study.optimize(objective, n_trials=int(tune_config.number_trail))  # optimize
     except KeyboardInterrupt:
         logger.critical('Keyboard Interrupt.')
