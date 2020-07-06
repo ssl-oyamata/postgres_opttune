@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def create_study(study_name, sampler, save_study_history=False, load_study_history=False,
+def create_study(study_name, sampler, save_study_history=False, load_study_history=False, direction='minimize',
                  history_database_url='postgresql://postgres@localhost:5432/study_history'):
     """
     create study.
@@ -15,7 +15,7 @@ def create_study(study_name, sampler, save_study_history=False, load_study_histo
         db_storage = optuna.storages.RDBStorage(history_database_url)
 
     try:
-        study = optuna.create_study(study_name=study_name, sampler=sampler, direction='maximize',
+        study = optuna.create_study(study_name=study_name, sampler=sampler, direction=direction,
                                     storage=db_storage)
     except optuna.exceptions.OptunaError:
         # If a study with the same name already exists, Load past history.

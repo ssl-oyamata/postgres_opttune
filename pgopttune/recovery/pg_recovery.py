@@ -42,7 +42,7 @@ class Recovery(PostgresParameter):
         # Two to three checkpoints are performed within the WAL size specified in the max_wal_size parameter.
         # Therefore, we divide by 2 assuming the worst case.
         estimate_max_wal_size_mb = str(math.floor(estimate_max_wal_size / (1024 * 1024))) + 'MB'
-        logging.info("The maximum value of max_wal_size estimated based on the measured values is {}.".format(
+        logger.info("The maximum value of max_wal_size estimated based on the measured values is {}.".format(
             estimate_max_wal_size_mb))
         return estimate_max_wal_size_mb
 
@@ -63,7 +63,7 @@ class Recovery(PostgresParameter):
             self._crash_database()
             self._free_cache()
             recovery_time = self._measurement_recovery_database_time()
-            # logging.info('The wal size written after the checkpoint is {}B. '
+            # logger.info('The wal size written after the checkpoint is {}B. '
             #              'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
             self.x_recovery_time = np.append(self.x_recovery_time, recovery_time)
             self.y_recovery_wal_size = np.append(self.y_recovery_wal_size, recovery_wal_size)
@@ -72,8 +72,8 @@ class Recovery(PostgresParameter):
         self.reset_param()
         progress_bar.close()
         np.set_printoptions(precision=3)
-        logging.info("The wal size written after the checkpoint(Byte) : {}".format(self.y_recovery_wal_size))
-        logging.info("PostgreSQL Recovery time(Sec) : {}".format(self.x_recovery_time))
+        logger.info("The wal size written after the checkpoint(Byte) : {}".format(self.y_recovery_wal_size))
+        logger.info("PostgreSQL Recovery time(Sec) : {}".format(self.x_recovery_time))
 
     def _create_test_table(self):
         create_table_sql = "CREATE TABLE IF NOT EXISTS " + self._test_table_name + "(id INT, test TEXT)"
@@ -136,8 +136,8 @@ class Recovery(PostgresParameter):
                 cut_res = subprocess.Popen(cut_cmd, stdout=subprocess.PIPE, stdin=grep_res.stdout)
                 latest_checkpoint_lsn = cut_res.communicate()[0].decode('utf-8')
             except ValueError:
-                logging.critical(traceback.format_exc())
-                logging.info('Failed Command: {} '.format(get_latest_checkpoint_cmd_str))
+                logger.critical(traceback.format_exc())
+                logger.info('Failed Command: {} '.format(get_latest_checkpoint_cmd_str))
                 sys.exit(1)
         else:
             recovery_database_cmd = 'sudo -i -u {} {}/pg_controldata -D {} ' \
@@ -212,4 +212,4 @@ if __name__ == "__main__":
     conf_path = '../../conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     recovery = Recovery(postgres_server_config_test, required_recovery_time_second=300)
-    print(recovery.estimate_max_wal_size())
+    # print(recovery.estimate_max_wal_size())
