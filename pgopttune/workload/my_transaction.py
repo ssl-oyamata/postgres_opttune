@@ -27,7 +27,7 @@ class MyTransaction:
                     query_start_time = time.time()
                     if "vacuum" in self.statement[index].lower():
                         cur.execute("END;")
-                        cur.execute(self.statement[index])
+                    cur.execute(self.statement[index])
                     # logger.info("Execute Statement : {}".format(self.statement[index]))
                     elapsed_times += (time.time() - query_start_time)
         return elapsed_times
