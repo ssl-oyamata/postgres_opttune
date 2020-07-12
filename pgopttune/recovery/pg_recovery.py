@@ -8,6 +8,7 @@ import string
 import traceback
 import subprocess
 import numpy as np
+from typing import Union
 from tqdm import tqdm
 from psycopg2.extras import DictCursor
 from sklearn import linear_model
@@ -16,6 +17,8 @@ from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
 from pgopttune.config.postgres_server_config import PostgresServerConfig
+from pgopttune.workload.oltpbench import Oltpbench
+from pgopttune.workload.pgbench import Pgbench
 
 logger = logging.getLogger(__name__)
 
@@ -23,16 +26,18 @@ logger = logging.getLogger(__name__)
 class Recovery(PostgresParameter):
     def __init__(self,
                  postgres_server_config: PostgresServerConfig,
+                 workload: Union[Oltpbench, Pgbench],
                  required_recovery_time_second=300):
         super().__init__(postgres_server_config)
         self._test_table_name = "recovery_time_test"
         os.environ['LANG'] = 'C'
+        self.workload = workload
         self.required_recovery_time_second = required_recovery_time_second
         self.x_recovery_time = np.array([])
         self.y_recovery_wal_size = np.array([])
 
     def estimate_max_wal_size(self):
-        self.measurement_recovery_time()  # Measure WAL size and recovery time
+        self._measurement_recovery_time()  # Measure WAL size and recovery time
         lr = linear_model.LinearRegression()  # Predict WAL size from recovery time using linear regression
         lr.fit(self.x_recovery_time.reshape(-1, 1).astype(np.float64),
                self.y_recovery_wal_size.reshape(-1, 1).astype(np.float64))
@@ -46,28 +51,28 @@ class Recovery(PostgresParameter):
             estimate_max_wal_size_mb))
         return estimate_max_wal_size_mb
 
-    def measurement_recovery_time(self, measurement_rows_scale=100000, measurement_pattern=4):
+    def _measurement_recovery_time(self, measurement_second_scale=300, measurement_pattern=5):
         # measurement pattern
-        measurement_rows = np.arange(measurement_rows_scale, measurement_rows_scale * (measurement_pattern + 1),
-                                     measurement_rows_scale)
-        sum_measurement_rows = np.sum(measurement_rows)
+        measurement_second_array = np.arange(measurement_second_scale,
+                                             measurement_second_scale * (measurement_pattern + 1),
+                                             measurement_second_scale)
+        sum_measurement_second = np.sum(measurement_second_array)
+        logger.debug("Measurement of WAL size and recovery time pattern {} s".format(measurement_second_array))
         self._no_checkpoint_settings()
-        self._create_test_table()
-        self.reset_database()
-
+        self.workload.data_load()
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
-        for i in measurement_rows:
-            self._truncate_test_table()  # truncate test table
-            self._insert_test_data(i)  # insert test data
+        for measurement_time_second in measurement_second_array:
+            self.reset_database()
+            self.workload.run(measurement_time_second=measurement_time_second)
             recovery_wal_size = self._get_recovery_wal_size()
             self._crash_database()
             self._free_cache()
             recovery_time = self._measurement_recovery_database_time()
-            # logger.info('The wal size written after the checkpoint is {}B. '
-            #              'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
+            logger.info('The wal size written after the checkpoint is {}B. '
+                        'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
             self.x_recovery_time = np.append(self.x_recovery_time, recovery_time)
             self.y_recovery_wal_size = np.append(self.y_recovery_wal_size, recovery_wal_size)
-            progress_bar.update(i / sum_measurement_rows * 100)
+            progress_bar.update(measurement_time_second / sum_measurement_second * 100)
 
         self.reset_param()
         progress_bar.close()
@@ -75,32 +80,35 @@ class Recovery(PostgresParameter):
         logger.info("The wal size written after the checkpoint(Byte) : {}".format(self.y_recovery_wal_size))
         logger.info("PostgreSQL Recovery time(Sec) : {}".format(self.x_recovery_time))
 
-    def _create_test_table(self):
-        create_table_sql = "CREATE TABLE IF NOT EXISTS " + self._test_table_name + "(id INT, test TEXT)"
-        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
-            conn.set_session(autocommit=True)
-            with conn.cursor() as cur:
-                cur.execute(create_table_sql)
-
-    def _truncate_test_table(self):
-        create_table_sql = "TRUNCATE " + self._test_table_name
-        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
-            conn.set_session(autocommit=True)
-            with conn.cursor() as cur:
-                cur.execute(create_table_sql)
-
-    def _insert_test_data(self, row=1, data_size=1024):
-        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
-            for i in range(1, row + 1):
-                test_column_data = self.random_string(data_size)
-                insert_sql = "INSERT INTO {} VALUES({}, '{}')".format(self._test_table_name, i, test_column_data)
-                with conn.cursor() as cur:
-                    cur.execute(insert_sql)
-            conn.commit()
+    # def _create_test_table(self):
+    #     create_table_sql = "CREATE TABLE IF NOT EXISTS " + self._test_table_name + "(id INT, test TEXT)"
+    #     with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
+    #         conn.set_session(autocommit=True)
+    #         with conn.cursor() as cur:
+    #             cur.execute(create_table_sql)
+    #
+    # def _truncate_test_table(self):
+    #     create_table_sql = "TRUNCATE " + self._test_table_name
+    #     with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
+    #         conn.set_session(autocommit=True)
+    #         with conn.cursor() as cur:
+    #             cur.execute(create_table_sql)
+    #
+    # def _insert_test_data(self, row=1, data_size=1024):
+    #     with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
+    #         for i in range(1, row + 1):
+    #             test_column_data = self.random_string(data_size)
+    #             insert_sql = "INSERT INTO {} VALUES({}, '{}')".format(self._test_table_name, i, test_column_data)
+    #             with conn.cursor() as cur:
+    #                 cur.execute(insert_sql)
+    #         conn.commit()
 
     def _no_checkpoint_settings(self):
         no_checkpoint_timeout_sql = "ALTER SYSTEM SET checkpoint_timeout TO '1d'"
         no_checkpoint_wal_size_sql = "ALTER SYSTEM set max_wal_size TO '10TB'"
+        logger.debug("No checkpoint settings apply.")
+        logger.debug("no_checkpoint_timeout_sql: {}".format(no_checkpoint_timeout_sql))
+        logger.debug("no_checkpoint_wal_size_sql: {}".format(no_checkpoint_wal_size_sql))
         with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
@@ -208,8 +216,13 @@ class Recovery(PostgresParameter):
 
 if __name__ == "__main__":
     from pgopttune.config.postgres_server_config import PostgresServerConfig
+    from pgopttune.config.oltpbench_config import OltpbenchConfig
 
-    conf_path = '../../conf/postgres_opttune.conf'
+    logging.basicConfig(level=logging.DEBUG)
+    conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
-    recovery = Recovery(postgres_server_config_test, required_recovery_time_second=300)
-    # print(recovery.estimate_max_wal_size())
+    oltpbench_config_test = OltpbenchConfig(conf_path)
+    workload_test = Oltpbench(postgres_server_config=postgres_server_config_test,
+                              oltpbench_config=oltpbench_config_test)
+    recovery = Recovery(postgres_server_config_test, required_recovery_time_second=300, workload=workload_test)
+    print(recovery.estimate_max_wal_size())

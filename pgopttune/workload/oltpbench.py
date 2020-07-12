@@ -3,6 +3,7 @@ import sys
 import logging
 import traceback
 import subprocess
+from xml.etree.ElementTree import parse
 from .workload import Workload
 from pgopttune.utils.command import run_command
 from pgopttune.config.postgres_server_config import PostgresServerConfig
@@ -29,10 +30,20 @@ class Oltpbench(Workload):
         os.chdir(cwd)
         self.vacuum_database()  # vacuum analyze
 
-    def run(self):
+    def run(self, measurement_time_second: int = None):
         grep_string = "requests\/sec"
         cwd = os.getcwd()
         config_path = os.path.join(cwd, self.oltpbench_config.oltpbench_config_path)
+        if measurement_time_second is not None:
+            config_dir, config_filename = os.path.split(config_path)
+            measurement_config_path = os.path.join(cwd, config_dir,
+                                                   "measurement_test_" + str(measurement_time_second) + "s_"
+                                                   + config_filename)
+            tree = parse(config_path)  # read xml
+            tree.find('works/work/time').text = str(measurement_time_second)
+            tree.write(measurement_config_path, 'utf-8', True)
+            config_path = measurement_config_path
+
         run_cmd_str = "{}/oltpbenchmark -b {} -c {} --execute=true -s 5". \
             format(self.oltpbench_config.oltpbench_path,
                    self.oltpbench_config.benchmark_kind,

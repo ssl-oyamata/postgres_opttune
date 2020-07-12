@@ -28,15 +28,18 @@ class Pgbench(Workload):
         run_command(data_load_cmd)
         self.vacuum_database()  # vacuum analyze
 
-    def run(self):
+    def run(self, measurement_time_second: int = None):
         grep_string = "excluding"
+        if measurement_time_second is None:
+            measurement_time_second = self.pgbench_config.evaluation_time
+
         run_cmd_str = "{}/pgbench -h {} -p {} -U {} {} -c {} -T {}".format(self.postgres_server_config.pgbin,
                                                                            self.postgres_server_config.host,
                                                                            self.postgres_server_config.port,
                                                                            self.postgres_server_config.user,
                                                                            self.postgres_server_config.database,
                                                                            self.pgbench_config.clients,
-                                                                           self.pgbench_config.evaluation_time)
+                                                                           measurement_time_second)
         run_cmd = run_cmd_str.split()
         grep_cmd = "grep {}".format(grep_string)
         grep_cmd = grep_cmd.split()
