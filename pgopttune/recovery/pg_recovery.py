@@ -184,19 +184,22 @@ class Recovery(PostgresParameter):
                 raise ValueError('PostgreSQL crash failed.\n'
                                  'crash command : {}'.format(crash_database_cmd))
 
-    def _measurement_recovery_database_time(self):
+    def _measurement_recovery_database_time(self, wait_time=1000000):
         # localhost PostgreSQL
         if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
-            recovery_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} start -w'.format(
-                self.postgres_server_config.os_user, self.postgres_server_config.pgbin,
-                self.postgres_server_config.pgdata)
+            recovery_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} start -w -t {}'. \
+                format(self.postgres_server_config.os_user,
+                       self.postgres_server_config.pgbin,
+                       self.postgres_server_config.pgdata,
+                       wait_time)
             recovery_start = time.time()
             run_command(recovery_database_cmd, stdout_devnull=True)
             recovery_elapsed_time = time.time() - recovery_start
         # remote PostgreSQL
         else:
-            recovery_database_cmd = '{}/pg_ctl -D {} start -w'.format(self.postgres_server_config.pgbin,
-                                                                      self.postgres_server_config.pgdata)
+            recovery_database_cmd = '{}/pg_ctl -D {} start -w -t {}'.format(self.postgres_server_config.pgbin,
+                                                                            self.postgres_server_config.pgdata,
+                                                                            wait_time)
             ssh = SSHCommandExecutor(user=self.postgres_server_config.os_user,
                                      password=self.postgres_server_config.ssh_password,
                                      hostname=self.postgres_server_config.host,
