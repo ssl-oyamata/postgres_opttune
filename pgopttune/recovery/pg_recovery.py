@@ -57,7 +57,7 @@ class Recovery(PostgresParameter):
         checkpoint_timeout_estimate_second = self.estimate_use_linear_regression(self.x_recovery_time,
                                                                                  self.measurement_second_array,
                                                                                  self.required_recovery_time_second)
-        checkpoint_timeout_estimate_min = str(math.floor(checkpoint_timeout_estimate_second / 60)) + 'm'
+        checkpoint_timeout_estimate_min = str(math.floor(checkpoint_timeout_estimate_second / 60)) + 'min'
         logger.info("The value of checkpoint_timeout estimated based on the measured values is {}.".format(
             checkpoint_timeout_estimate_min))
         return estimate_max_wal_size_mb, checkpoint_timeout_estimate_min
