@@ -113,7 +113,8 @@ class PostgresTuneParameter(PostgresParameter):
             return json.load(f)
 
     @staticmethod
-    def create_tune_parameter_json(host, major_version, params_json_dir='./conf', estimate_max_wal_size=None):
+    def create_tune_parameter_json(host, major_version, params_json_dir='./conf',
+                                   estimate_max_wal_size=None, estimate_checkpoint_timeout=None):
         hardware = HardwareResource(host=host)
         tune_parameter_json_path = '{}/version-{}.json'.format(params_json_dir, major_version)
         tune_parameter_json_backup_path = '{}/version-{}.json.org'.format(params_json_dir, major_version)
@@ -130,11 +131,9 @@ class PostgresTuneParameter(PostgresParameter):
                 tune_parameters[index]['tuning_range']['minval'] = estimate_max_wal_size
                 tune_parameters[index]['tuning_range']['maxval'] = estimate_max_wal_size
 
-            elif (estimate_max_wal_size is not None) and (tune_parameter['name'] == 'checkpoint_timeout'):
-                # Set the wal_max_size parameter to control check pointing,
-                # so that check pointing due to timeouts should not occur.
-                tune_parameters[index]['tuning_range']['minval'] = '1d'
-                tune_parameters[index]['tuning_range']['maxval'] = '1d'
+            elif (estimate_checkpoint_timeout is not None) and (tune_parameter['name'] == 'checkpoint_timeout'):
+                tune_parameters[index]['tuning_range']['minval'] = estimate_checkpoint_timeout
+                tune_parameters[index]['tuning_range']['maxval'] = estimate_checkpoint_timeout
 
         shutil.copyfile(tune_parameter_json_path, tune_parameter_json_backup_path)  # backup
         with open(tune_parameter_json_path, 'w') as f:

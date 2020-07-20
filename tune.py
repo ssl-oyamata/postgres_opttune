@@ -58,21 +58,23 @@ def main(
     # Estimate the wal_max_size based on the recovery time allowed.
     if int(tune_config.required_recovery_time_second) != 0 \
             and (tune_config.benchmark == 'pgbench' or tune_config.benchmark == 'oltpbench'):
-        logger.info('Start to estimate the wal_max_size parameter. required_recovery_time_second = "{}s"'.format(
-            tune_config.required_recovery_time_second))
+        logger.info('Start to estimate the wal_max_size and checkpoint_timeout parameter. \n'
+                    'required_recovery_time_second = "{}s"'.format(tune_config.required_recovery_time_second))
         recovery = Recovery(postgres_server_config,
                             workload=objective.workload,
                             required_recovery_time_second=tune_config.required_recovery_time_second)
-        estimate_max_wal_size_mb = recovery.estimate_max_wal_size()
+        estimate_max_wal_size_mb, estimate_checkpoint_timeout_min = recovery.estimate_check_point_parameters()
     else:
         estimate_max_wal_size_mb = None
+        estimate_checkpoint_timeout_min = None
 
     # create tune parameter json
     # path : ./conf/version-<major-version>.json
     PostgresTuneParameter.create_tune_parameter_json(postgres_server_config.host,
                                                      postgres_server_config.major_version,
                                                      params_json_dir=tune_config.parameter_json_dir,
-                                                     estimate_max_wal_size=estimate_max_wal_size_mb)
+                                                     estimate_max_wal_size=estimate_max_wal_size_mb,
+                                                     estimate_checkpoint_timeout=estimate_checkpoint_timeout_min)
 
     logger.info('Run benchmark : {}'.format(tune_config.benchmark))
     cwd = os.getcwd()  # save current directory

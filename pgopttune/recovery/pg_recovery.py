@@ -27,48 +27,55 @@ class Recovery(PostgresParameter):
     def __init__(self,
                  postgres_server_config: PostgresServerConfig,
                  workload: Union[Oltpbench, Pgbench],
-                 required_recovery_time_second=300):
+                 required_recovery_time_second=300,
+                 measurement_second_scale=300,
+                 measurement_pattern=5):
         super().__init__(postgres_server_config)
-        self._test_table_name = "recovery_time_test"
         os.environ['LANG'] = 'C'
         self.workload = workload
         self.required_recovery_time_second = required_recovery_time_second
         self.x_recovery_time = np.array([])
         self.y_recovery_wal_size = np.array([])
+        self.measurement_second_array = np.arange(measurement_second_scale,
+                                                  measurement_second_scale * (measurement_pattern + 1),
+                                                  measurement_second_scale)  # measurement pattern
 
-    def estimate_max_wal_size(self):
+    def estimate_check_point_parameters(self):
         self._measurement_recovery_time()  # Measure WAL size and recovery time
-        lr = linear_model.LinearRegression()  # Predict WAL size from recovery time using linear regression
-        lr.fit(self.x_recovery_time.reshape(-1, 1).astype(np.float64),
-               self.y_recovery_wal_size.reshape(-1, 1).astype(np.float64))
-        required_recovery_time_second = np.array([[self.required_recovery_time_second]], dtype=np.float64)
-        max_wal_size_estimate = lr.predict(required_recovery_time_second)[0][0]
-        estimate_max_wal_size = (max_wal_size_estimate / 2)
+        # estimate max_wal_size parameter
+        max_wal_size_estimate = self.estimate_use_linear_regression(self.x_recovery_time,
+                                                                    self.y_recovery_wal_size,
+                                                                    self.required_recovery_time_second)
+        estimate_max_wal_size = (max_wal_size_estimate * 3)
         # Two to three checkpoints are performed within the WAL size specified in the max_wal_size parameter.
-        # Therefore, we divide by 2 assuming the worst case.
+        # We multiply the estimated WAL size by 3 to prevent the checkpoint from being triggered by the WAL size.
         estimate_max_wal_size_mb = str(math.floor(estimate_max_wal_size / (1024 * 1024))) + 'MB'
-        logger.info("The maximum value of max_wal_size estimated based on the measured values is {}.".format(
+        logger.info("The value of max_wal_size estimated based on the measured values is {}.".format(
             estimate_max_wal_size_mb))
-        return estimate_max_wal_size_mb
 
-    def _measurement_recovery_time(self, measurement_second_scale=300, measurement_pattern=5):
-        # measurement pattern
-        measurement_second_array = np.arange(measurement_second_scale,
-                                             measurement_second_scale * (measurement_pattern + 1),
-                                             measurement_second_scale)
-        sum_measurement_second = np.sum(measurement_second_array)
-        logger.debug("Measurement of WAL size and recovery time pattern {} s".format(measurement_second_array))
-        self._no_checkpoint_settings()
+        # estimate checkpoint_timeout parameter
+        checkpoint_timeout_estimate_second = self.estimate_use_linear_regression(self.x_recovery_time,
+                                                                                 self.measurement_second_array,
+                                                                                 self.required_recovery_time_second)
+        checkpoint_timeout_estimate_min = str(math.floor(checkpoint_timeout_estimate_second / 60)) + 'm'
+        logger.info("The value of checkpoint_timeout estimated based on the measured values is {}.".format(
+            checkpoint_timeout_estimate_min))
+        return estimate_max_wal_size_mb, checkpoint_timeout_estimate_min
+
+    def _measurement_recovery_time(self):
+        sum_measurement_second = np.sum(self.measurement_second_array)
+        logger.debug("Measurement of WAL size and recovery time pattern {} s".format(self.measurement_second_array))
+        self.no_checkpoint_settings()
         self.workload.data_load()
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
-        for measurement_time_second in measurement_second_array:
+        for measurement_time_second in self.measurement_second_array:
             self.reset_database()
             self.workload.run(measurement_time_second=measurement_time_second)
-            recovery_wal_size = self._get_recovery_wal_size()
+            recovery_wal_size = self.get_recovery_wal_size()
             self._crash_database()
             self._free_cache()
             recovery_time = self._measurement_recovery_database_time()
-            logger.info('The wal size written after the checkpoint is {}B. '
+            logger.info('The wal size written after the checkpoint is {}B.'
                         'And crash recovery time is {}s'.format(recovery_wal_size, recovery_time))
             self.x_recovery_time = np.append(self.x_recovery_time, recovery_time)
             self.y_recovery_wal_size = np.append(self.y_recovery_wal_size, recovery_wal_size)
@@ -80,42 +87,7 @@ class Recovery(PostgresParameter):
         logger.info("The wal size written after the checkpoint(Byte) : {}".format(self.y_recovery_wal_size))
         logger.info("PostgreSQL Recovery time(Sec) : {}".format(self.x_recovery_time))
 
-    # def _create_test_table(self):
-    #     create_table_sql = "CREATE TABLE IF NOT EXISTS " + self._test_table_name + "(id INT, test TEXT)"
-    #     with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
-    #         conn.set_session(autocommit=True)
-    #         with conn.cursor() as cur:
-    #             cur.execute(create_table_sql)
-    #
-    # def _truncate_test_table(self):
-    #     create_table_sql = "TRUNCATE " + self._test_table_name
-    #     with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
-    #         conn.set_session(autocommit=True)
-    #         with conn.cursor() as cur:
-    #             cur.execute(create_table_sql)
-    #
-    # def _insert_test_data(self, row=1, data_size=1024):
-    #     with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
-    #         for i in range(1, row + 1):
-    #             test_column_data = self.random_string(data_size)
-    #             insert_sql = "INSERT INTO {} VALUES({}, '{}')".format(self._test_table_name, i, test_column_data)
-    #             with conn.cursor() as cur:
-    #                 cur.execute(insert_sql)
-    #         conn.commit()
-
-    def _no_checkpoint_settings(self):
-        no_checkpoint_timeout_sql = "ALTER SYSTEM SET checkpoint_timeout TO '1d'"
-        no_checkpoint_wal_size_sql = "ALTER SYSTEM set max_wal_size TO '10TB'"
-        logger.debug("No checkpoint settings apply.")
-        logger.debug("no_checkpoint_timeout_sql: {}".format(no_checkpoint_timeout_sql))
-        logger.debug("no_checkpoint_wal_size_sql: {}".format(no_checkpoint_wal_size_sql))
-        with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
-            conn.set_session(autocommit=True)
-            with conn.cursor() as cur:
-                cur.execute(no_checkpoint_timeout_sql)
-                cur.execute(no_checkpoint_wal_size_sql)
-
-    def _get_recovery_wal_size(self):
+    def get_recovery_wal_size(self):
         latest_checkpoint_lsn = self._get_latest_checkpoint_lsn()
         get_recovery_wal_size_sql = "SELECT pg_current_wal_insert_lsn() - '{}'::pg_lsn AS wa_size".format(
             latest_checkpoint_lsn)
@@ -212,6 +184,19 @@ class Recovery(PostgresParameter):
                                  'start command : {}'.format(recovery_database_cmd))
         return float(recovery_elapsed_time)
 
+    def no_checkpoint_settings(self):
+        self.set_parameter(param_name='checkpoint_timeout', param_value='1d')
+        self.set_parameter(param_name='max_wal_size', param_value='10TB')
+
+    @staticmethod
+    def estimate_use_linear_regression(x_recovery_time_second, y, required_recovery_time_second):
+        lr = linear_model.LinearRegression()
+        # lr = linear_model.LinearRegression(fit_intercept=False)
+        lr.fit(x_recovery_time_second.reshape(-1, 1).astype(np.float64), y.reshape(-1, 1).astype(np.float64))
+        required_recovery_time_second = np.array([[required_recovery_time_second]], dtype=np.float64)
+        estimated_size = lr.predict(required_recovery_time_second)[0][0]
+        return estimated_size
+
     @staticmethod
     def random_string(length):
         return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -228,4 +213,4 @@ if __name__ == "__main__":
     workload_test = Oltpbench(postgres_server_config=postgres_server_config_test,
                               oltpbench_config=oltpbench_config_test)
     recovery = Recovery(postgres_server_config_test, required_recovery_time_second=300, workload=workload_test)
-    print(recovery.estimate_max_wal_size())
+    print(recovery.estimate_check_point_parameters())
