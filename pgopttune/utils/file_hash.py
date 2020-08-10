@@ -28,9 +28,7 @@ def get_file_hash(file_path, algorithms='sha1'):
                 break
             hash_calc.update(chunk)
     digest = hash_calc.hexdigest()
-    logger.debug("The hash value calculation is complete.\n"
-                 "File : {} \n"
-                 "Hash : {}".format(file_path, digest))
+    logger.debug("The hash value calculation is complete. File : {} , Hash : {}".format(file_path, digest))
     return digest
 
 
