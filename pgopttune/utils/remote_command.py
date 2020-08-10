@@ -1,5 +1,6 @@
 import paramiko
 import scp
+from retrying import retry
 
 
 class SSHCommandExecutor:
@@ -8,11 +9,16 @@ class SSHCommandExecutor:
         self.port = port
         self.user = user
         self.password = password
+        self.timeout = timeout
+        self._connect()
+
+    @retry(stop_max_attempt_number=5, wait_fixed=10000)
+    def _connect(self):
         self.client = paramiko.SSHClient()
         self.client.load_system_host_keys()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(self.hostname, username=self.user,
-                            password=self.password, port=self.port, timeout=timeout, look_for_keys=False)
+                            password=self.password, port=self.port, timeout=self.timeout, look_for_keys=False)
 
     def __del__(self):
         self.client.close()
@@ -38,8 +44,8 @@ class SSHCommandExecutor:
 
 if __name__ == "__main__":
     ssh = SSHCommandExecutor(hostname='127.0.0.1', user='postgres', password='postgres')
-    # ret = ssh.exec('ls /tmp ; ls /tmp')
-    ret = ssh.exec('/usr/pgsql-12/bin/pg_ctl -D /var/lib/pgsql/12/data/ restart')
+    ret = ssh.exec('ls /tmp', only_retval=False)
+    # ret = ssh.exec('/usr/pgsql-12/bin/pg_ctl -D /var/lib/pgsql/12/data/ restart')
     if not ret['retval'] == 0:
         raise Exception('command failed')
     print('stdout : {}'.format(ret["stdout"]))
