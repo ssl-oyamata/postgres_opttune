@@ -1,11 +1,11 @@
-import logging
+from logging import getLogger
 from pgopttune.workload.pgbench import Pgbench
 from pgopttune.objective.objective import Objective
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
 from pgopttune.config.pgbench_config import PgbenchConfig
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class ObjectivePgbench(Objective):

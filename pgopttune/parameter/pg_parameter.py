@@ -1,5 +1,5 @@
 import time
-import logging
+from logging import getLogger
 import psycopg2
 from psycopg2.extras import DictCursor
 from pgopttune.utils.remote_command import SSHCommandExecutor
@@ -7,7 +7,7 @@ from pgopttune.utils.command import run_command
 from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class PostgresParameter:

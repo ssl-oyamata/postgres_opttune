@@ -1,5 +1,5 @@
 import os
-import logging
+from logging import getLogger
 import datetime
 import pickle
 import multiprocessing
@@ -10,7 +10,7 @@ from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.workload_sampling_config import WorkloadSamplingConfig
 from pgopttune.workload.my_transaction import MyTransaction
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class MyWorkload(Workload):
@@ -123,7 +123,9 @@ class MyWorkload(Workload):
 if __name__ == "__main__":
     from pgopttune.config.postgres_server_config import PostgresServerConfig
 
-    logging.basicConfig(level=logging.DEBUG)
+    from logging import basicConfig, DEBUG
+
+    basicConfig(level=DEBUG)
     conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     workload_sampling_config_test = WorkloadSamplingConfig(conf_path)
@@ -131,15 +133,15 @@ if __name__ == "__main__":
                              workload_sampling_config=workload_sampling_config_test,
                              postgres_server_config=postgres_server_config_test)
     save_file = my_workload.save_my_workload()
-    logging.debug("run transactions ")
+    logger.debug("run transactions ")
     my_workload_elapsed_time = my_workload.run()
-    logging.debug(my_workload_elapsed_time)
+    logger.debug(my_workload_elapsed_time)
     load_workload = MyWorkload.load_my_workload(save_file, postgres_server_config=postgres_server_config_test)
-    logging.debug("run transactions using saved file")
+    logger.debug("run transactions using saved file")
     load_workload_elapsed_time = load_workload.run()
-    logging.debug(load_workload_elapsed_time)
-    logging.debug("finised...")
-    logging.debug(my_workload_elapsed_time)
-    logging.debug(load_workload_elapsed_time)
+    logger.debug(load_workload_elapsed_time)
+    logger.debug("finised...")
+    logger.debug(my_workload_elapsed_time)
+    logger.debug(load_workload_elapsed_time)
 
     # my_workload.extract_workload()

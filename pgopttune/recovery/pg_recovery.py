@@ -3,11 +3,11 @@ import sys
 import math
 import time
 import random
-import logging
 import string
 import traceback
 import subprocess
 import numpy as np
+from logging import getLogger
 from typing import Union
 from tqdm import tqdm
 from psycopg2.extras import DictCursor
@@ -20,7 +20,7 @@ from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.workload.oltpbench import Oltpbench
 from pgopttune.workload.pgbench import Pgbench
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class Recovery(PostgresParameter):
@@ -205,12 +205,13 @@ class Recovery(PostgresParameter):
 if __name__ == "__main__":
     from pgopttune.config.postgres_server_config import PostgresServerConfig
     from pgopttune.config.oltpbench_config import OltpbenchConfig
+    from logging import basicConfig, DEBUG
 
-    logging.basicConfig(level=logging.DEBUG)
+    basicConfig(level=DEBUG)
     conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     oltpbench_config_test = OltpbenchConfig(conf_path)
     workload_test = Oltpbench(postgres_server_config=postgres_server_config_test,
                               oltpbench_config=oltpbench_config_test)
     recovery = Recovery(postgres_server_config_test, required_recovery_time_second=300, workload=workload_test)
-    print(recovery.estimate_check_point_parameters())
+    logger.debug(recovery.estimate_check_point_parameters())

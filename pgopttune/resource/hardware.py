@@ -1,10 +1,10 @@
 import psutil
-import logging
+from logging import getLogger
 
 from pgopttune.utils.unit import format_bytes_str
 from pgopttune.utils.remote_command import SSHCommandExecutor
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class HardwareResource:

@@ -1,14 +1,14 @@
 import os
 import json
-import logging
 import shutil
+from logging import getLogger
 from pgopttune.resource.hardware import HardwareResource
 from pgopttune.utils.unit import get_param_raw, format_bytes_str, format_milliseconds_str
 from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.parameter.pg_parameter import PostgresParameter
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class PostgresTuneParameter(PostgresParameter):

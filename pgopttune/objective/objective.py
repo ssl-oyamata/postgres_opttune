@@ -1,9 +1,9 @@
-import logging
+from logging import getLogger
 from pgopttune.parameter.pg_tune_parameter import PostgresTuneParameter
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class Objective:
@@ -60,5 +60,5 @@ class Objective:
                                                         tune_parameter['tuning_range']['minval'],
                                                         tune_parameter['tuning_range']['maxval'])
             trial_array.append(trial_dict)
-        logging.debug('trial_array : {}'.format(trial_array))
+        logger.debug('trial_array : {}'.format(trial_array))
         return trial_array

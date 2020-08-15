@@ -1,11 +1,11 @@
-import logging
+from logging import getLogger
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
 from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
 from pgopttune.workload.star_schema_benchmark import StarSchemaBenchmark
 from pgopttune.objective.objective import Objective
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class ObjectiveStarSchemaBenchmark(Objective):

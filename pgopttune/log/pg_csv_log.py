@@ -1,13 +1,13 @@
 import os
 import time
-import logging
+from logging import getLogger
 from psycopg2.extras import DictCursor
 from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.parameter.pg_parameter import PostgresParameter
 from pgopttune.utils.remote_command import SSHCommandExecutor
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class PostgresCsvLog:
@@ -146,16 +146,17 @@ class PostgresCsvLog:
 
 if __name__ == "__main__":
     from pgopttune.config.postgres_server_config import PostgresServerConfig
+    from logging import getLogger, basicConfig, DEBUG
 
-    logging.basicConfig(level=logging.DEBUG)
+    basicConfig(level=DEBUG)
     conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     csv_log = PostgresCsvLog(postgres_server_config_test)
     csv_log.enable()
     # logging.debug(csv_log._csv_log_file_path)
-    logging.debug("sleep...")
+    logger.debug("sleep...")
     time.sleep(60)
     csv_log.disable()
     csv_log.load_csv_to_database()
-    logging.debug(csv_log.start_csv_log_unix_time)
-    logging.debug(csv_log.end_csv_log_unix_time)
+    logger.debug(csv_log.start_csv_log_unix_time)
+    logger.debug(csv_log.end_csv_log_unix_time)

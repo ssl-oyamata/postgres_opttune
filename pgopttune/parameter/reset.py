@@ -1,8 +1,8 @@
-import logging
+from logging import getLogger
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.parameter.pg_parameter import PostgresParameter
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def reset_postgres_param(postgres_server_config: PostgresServerConfig):
