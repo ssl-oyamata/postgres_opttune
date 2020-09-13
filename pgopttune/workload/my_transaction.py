@@ -20,13 +20,11 @@ class MyTransaction:
         self._sleep_until_statement_start_time(start_time, self.query_start_time[0])
 
         with get_pg_connection(dsn=postgres_server_config.dsn) as conn:
-            conn.autocommit = False
+            conn.autocommit = True
             with conn.cursor() as cur:
                 for index in range(len(self.query_start_time)):
                     self._sleep_until_statement_start_time(start_time, self.query_start_time[index])
                     query_start_time = time.time()
-                    if "vacuum" in self.statement[index].lower():
-                        cur.execute("END;")
                     cur.execute(self.statement[index])
                     # logger.info("Execute Statement : {}".format(self.statement[index]))
                     elapsed_times += (time.time() - query_start_time)

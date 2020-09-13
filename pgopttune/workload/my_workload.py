@@ -47,7 +47,8 @@ class MyWorkload(Workload):
              database_name = %s AND
              message LIKE '%%duration%%'
         ORDER BY session_id,
-                 log_time;
+                 session_line_num;
+                 -- log_time;
         '''
         with get_pg_connection(dsn=self.workload_sampling_config.dsn) as conn:
             with conn.cursor(cursor_factory=DictCursor) as cur:
