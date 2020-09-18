@@ -12,6 +12,8 @@ from typing import Union
 from tqdm import tqdm
 from psycopg2.extras import DictCursor
 from sklearn import linear_model
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import Pipeline
 from pgopttune.parameter.pg_parameter import PostgresParameter
 from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.utils.remote_command import SSHCommandExecutor
@@ -29,7 +31,7 @@ class Recovery(PostgresParameter):
                  workload: Union[Oltpbench, Pgbench],
                  required_recovery_time_second=300,
                  measurement_second_scale=300,
-                 measurement_pattern=5):
+                 measurement_pattern=10):
         super().__init__(postgres_server_config)
         os.environ['LANG'] = 'C'
         self.workload = workload
@@ -43,7 +45,7 @@ class Recovery(PostgresParameter):
     def estimate_check_point_parameters(self):
         self._measurement_recovery_time()  # Measure WAL size and recovery time
         # estimate max_wal_size parameter
-        max_wal_size_estimate = self.estimate_use_linear_regression(self.x_recovery_time,
+        max_wal_size_estimate = self.estimate_use_polynomial_regression(self.x_recovery_time,
                                                                     self.y_recovery_wal_size,
                                                                     self.required_recovery_time_second)
         estimate_max_wal_size = (max_wal_size_estimate * 3)
@@ -54,7 +56,7 @@ class Recovery(PostgresParameter):
             estimate_max_wal_size_mb))
 
         # estimate checkpoint_timeout parameter
-        checkpoint_timeout_estimate_second = self.estimate_use_linear_regression(self.x_recovery_time,
+        checkpoint_timeout_estimate_second = self.estimate_use_polynomial_regression(self.x_recovery_time,
                                                                                  self.measurement_second_array,
                                                                                  self.required_recovery_time_second)
         checkpoint_timeout_estimate_min = str(math.floor(checkpoint_timeout_estimate_second / 60)) + 'min'
@@ -66,9 +68,10 @@ class Recovery(PostgresParameter):
         sum_measurement_second = np.sum(self.measurement_second_array)
         logger.debug("Measurement of WAL size and recovery time pattern {} s".format(self.measurement_second_array))
         self.no_checkpoint_settings()
-        self.workload.data_load()
+        #self.workload.data_load()
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
         for measurement_time_second in self.measurement_second_array:
+            self.workload.data_load()
             self.reset_database()
             self.workload.run(measurement_time_second=measurement_time_second)
             recovery_wal_size = self.get_recovery_wal_size()
@@ -195,6 +198,14 @@ class Recovery(PostgresParameter):
         lr.fit(x_recovery_time_second.reshape(-1, 1).astype(np.float64), y.reshape(-1, 1).astype(np.float64))
         required_recovery_time_second = np.array([[required_recovery_time_second]], dtype=np.float64)
         estimated_size = lr.predict(required_recovery_time_second)[0][0]
+        return estimated_size
+
+    @staticmethod
+    def estimate_use_polynomial_regression(x_recovery_time_second, y, required_recovery_time_second):
+        regr = Pipeline([('poly', PolynomialFeatures(degree=2)), ('linear', linear_model.LinearRegression())])
+        regr.fit(x_recovery_time_second.reshape(-1, 1).astype(np.float64), y.reshape(-1, 1).astype(np.float64))
+        required_recovery_time_second = np.array([[required_recovery_time_second]], dtype=np.float64)
+        estimated_size = regr.predict(required_recovery_time_second)[0][0]
         return estimated_size
 
     @staticmethod
