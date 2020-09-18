@@ -1,6 +1,6 @@
 import os
 import time
-import logging
+from logging import getLogger
 from multiprocessing import Pool
 from pgopttune.workload.workload import Workload
 from pgopttune.utils.command import run_command
@@ -8,7 +8,7 @@ from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
 from pgopttune.utils.pg_connect import get_pg_connection
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class StarSchemaBenchmark(Workload):
@@ -98,10 +98,12 @@ class StarSchemaBenchmark(Workload):
 if __name__ == "__main__":
     from pgopttune.config.postgres_server_config import PostgresServerConfig
     from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
+    from logging import basicConfig, DEBUG
 
+    basicConfig(level=DEBUG)
     conf_path = '../../conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     ssb_config_test = StarSchemaBenchmarkConfig(conf_path)
     ssb = StarSchemaBenchmark(postgres_server_config_test, ssb_config_test)
     ssb.data_load()
-    print(ssb.run())
+    logger.debug(ssb.run())

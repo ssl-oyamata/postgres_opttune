@@ -1,12 +1,12 @@
 import time
-import logging
 import datetime
+from logging import getLogger
 from pgopttune.log.pg_csv_log import PostgresCsvLog
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.workload_sampling_config import WorkloadSamplingConfig
 from pgopttune.workload.my_workload import MyWorkload
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class WorkloadSampler:
@@ -20,7 +20,7 @@ class WorkloadSampler:
     def save(self):
         logger.info("Start recording the executed SQL in the log file.")
         logger.info("Sampling time : {} s".format(self.workload_sampling_config.workload_sampling_time_second))
-        self.csv_log.enable()   # enable csv log
+        self.csv_log.enable()  # enable csv log
         csv_log_start_time = time.time()
         logger.info("Sampling start time : {}".format(datetime.datetime.fromtimestamp(csv_log_start_time)))
         csv_log_end_time = time.time() + self.workload_sampling_config.workload_sampling_time_second
@@ -42,7 +42,9 @@ class WorkloadSampler:
 if __name__ == "__main__":
     from pgopttune.config.postgres_server_config import PostgresServerConfig
 
-    logging.basicConfig(level=logging.DEBUG)
+    from logging import basicConfig, DEBUG
+
+    basicConfig(level=DEBUG)
     conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     workload_sampling_config_test = WorkloadSamplingConfig(conf_path)

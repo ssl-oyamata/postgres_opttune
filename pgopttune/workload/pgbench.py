@@ -1,6 +1,6 @@
 import os
 import sys
-import logging
+from logging import getLogger
 import traceback
 import subprocess
 from .workload import Workload
@@ -8,7 +8,7 @@ from pgopttune.utils.command import run_command
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.pgbench_config import PgbenchConfig
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class Pgbench(Workload):
@@ -53,7 +53,7 @@ class Pgbench(Workload):
             cut_res = subprocess.Popen(cut_cmd, stdout=subprocess.PIPE, stdin=grep_res.stdout)
             tps = float(cut_res.communicate()[0].decode('utf-8'))
         except ValueError:
-            logging.critical(traceback.format_exc())
-            logging.info('Failed Command: {} '.format(run_cmd_str))
+            logger.critical(traceback.format_exc())
+            logger.info('Failed Command: {} '.format(run_cmd_str))
             sys.exit(1)
         return tps

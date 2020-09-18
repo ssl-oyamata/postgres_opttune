@@ -1,25 +1,25 @@
 import hashlib
-import logging
+from logging import getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
-def get_file_hash(file_path, algorithms='sha1'):
-    if 'md5' == algorithms:
+def get_file_hash(file_path, algorithm='sha1'):
+    if 'md5' == algorithm:
         hash_calc = hashlib.md5()
-    elif 'sha224' == algorithms:
+    elif 'sha224' == algorithm:
         hash_calc = hashlib.sha224()
-    elif 'sha256' == algorithms:
+    elif 'sha256' == algorithm:
         hash_calc = hashlib.sha256()
-    elif 'sha384' == algorithms:
+    elif 'sha384' == algorithm:
         hash_calc = hashlib.sha384()
-    elif 'sha512' == algorithms:
+    elif 'sha512' == algorithm:
         hash_calc = hashlib.sha512()
-    elif 'sha1' == algorithms:
+    elif 'sha1' == algorithm:
         hash_calc = hashlib.sha1()
     else:
         raise ValueError("An unexpected algorithm was specified.\n"
-                         "algorithms = {}".format(algorithms))
+                         "algorithms = {}".format(algorithm))
 
     with open(file_path, 'rb') as f:
         while True:
@@ -33,6 +33,8 @@ def get_file_hash(file_path, algorithms='sha1'):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    file_path = 'conf/tpcc_config_postgres.xml'
-    get_file_hash(file_path)
+    from logging import basicConfig, DEBUG
+
+    basicConfig(level=DEBUG)
+    test_file_path = 'conf/tpcc_config_postgres.xml'
+    get_file_hash(test_file_path)

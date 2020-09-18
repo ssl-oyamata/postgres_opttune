@@ -1,5 +1,5 @@
 import time
-import logging
+from logging import getLogger
 from typing import Union
 from multiprocessing import Process
 from pgopttune.config.postgres_server_config import PostgresServerConfig
@@ -8,7 +8,7 @@ from pgopttune.recovery.pg_recovery import Recovery
 from pgopttune.workload.oltpbench import Oltpbench
 from pgopttune.workload.pgbench import Pgbench
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def check_relation_checkpoint_wal_size(
@@ -43,8 +43,9 @@ def check_relation_checkpoint_wal_size(
 
 
 if __name__ == "__main__":
-    fmt = "%(asctime)s %(levelname)s %(name)s :%(message)s"
-    logging.basicConfig(level=logging.INFO, format=fmt)
+    from logging import basicConfig, DEBUG
+
+    basicConfig(level=DEBUG)
     conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test1 = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     oltpbench_config_test1 = OltpbenchConfig(conf_path)

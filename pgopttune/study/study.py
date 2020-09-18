@@ -1,7 +1,7 @@
 import optuna
-import logging
+from logging import getLogger
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def create_study(study_name, sampler, save_study_history=False, load_study_history=False, direction='minimize',

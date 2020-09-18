@@ -1,6 +1,9 @@
 import paramiko
 import scp
 from retrying import retry
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 class SSHCommandExecutor:
@@ -43,11 +46,14 @@ class SSHCommandExecutor:
 
 
 if __name__ == "__main__":
+    from logging import basicConfig, DEBUG
+
+    basicConfig(level=DEBUG)
     ssh = SSHCommandExecutor(hostname='127.0.0.1', user='postgres', password='postgres')
     ret = ssh.exec('ls /tmp', only_retval=False)
     # ret = ssh.exec('/usr/pgsql-12/bin/pg_ctl -D /var/lib/pgsql/12/data/ restart')
     if not ret['retval'] == 0:
         raise Exception('command failed')
-    print('stdout : {}'.format(ret["stdout"]))
-    print('stderr : {}'.format(ret["stderr"]))
-    print('retval : {}'.format(ret["retval"]))
+    logger.debug('stdout : {}'.format(ret["stdout"]))
+    logger.debug('stderr : {}'.format(ret["stderr"]))
+    logger.debug('retval : {}'.format(ret["retval"]))

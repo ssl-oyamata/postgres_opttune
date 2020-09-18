@@ -1,11 +1,11 @@
 import subprocess
 import os
 import sys
-import logging
+from logging import getLogger
 import traceback
 import shlex
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 def run_command(cmd_str, stdin=None, stdout_devnull=False):
@@ -14,7 +14,7 @@ def run_command(cmd_str, stdin=None, stdout_devnull=False):
     """
     cmd = shlex.split(cmd_str)
     try:
-        if stdout_devnull: # for pg_ctl command
+        if stdout_devnull:  # for pg_ctl command
             with open(os.devnull, 'w') as devnull:
                 res = subprocess.run(cmd, stdout=devnull)
         else:
@@ -30,7 +30,10 @@ def run_command(cmd_str, stdin=None, stdout_devnull=False):
 
 
 if __name__ == "__main__":
+    from logging import basicConfig, DEBUG
+
+    basicConfig(level=DEBUG)
     result1 = run_command('ls -l /tmp')
-    print(result1.stdout.decode("utf8"))
+    logger.debug(result1.stdout.decode("utf8"))
     result2 = run_command('ls -l 4312aaaa')
-    print(result2.stdout.decode("utf8"))
+    logger.debug(result2.stdout.decode("utf8"))
