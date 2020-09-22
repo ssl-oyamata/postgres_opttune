@@ -44,10 +44,16 @@ class Recovery(PostgresParameter):
 
     def estimate_check_point_parameters(self):
         self._measurement_recovery_time()  # Measure WAL size and recovery time
+        # reshape
+        self.x_recovery_time = self.x_recovery_time.reshape(-1, 1).astype(np.float64)
+        self.y_recovery_wal_size = self.y_recovery_wal_size.reshape(-1, 1).astype(np.float64)
+        self.measurement_second_array = self.measurement_second_array.reshape(-1, 1).astype(np.float64)
+        self.required_recovery_time_second = np.array([[self.required_recovery_time_second]], dtype=np.float64)
+
         # estimate max_wal_size parameter
         max_wal_size_estimate = self.estimate_use_polynomial_regression(self.x_recovery_time,
-                                                                    self.y_recovery_wal_size,
-                                                                    self.required_recovery_time_second)
+                                                                        self.y_recovery_wal_size,
+                                                                        self.required_recovery_time_second)
         estimate_max_wal_size = (max_wal_size_estimate * 3)
         # Two to three checkpoints are performed within the WAL size specified in the max_wal_size parameter.
         # We multiply the estimated WAL size by 3 to prevent the checkpoint from being triggered by the WAL size.
@@ -57,8 +63,8 @@ class Recovery(PostgresParameter):
 
         # estimate checkpoint_timeout parameter
         checkpoint_timeout_estimate_second = self.estimate_use_polynomial_regression(self.x_recovery_time,
-                                                                                 self.measurement_second_array,
-                                                                                 self.required_recovery_time_second)
+                                                                                     self.measurement_second_array,
+                                                                                     self.required_recovery_time_second)
         checkpoint_timeout_estimate_min = str(math.floor(checkpoint_timeout_estimate_second / 60)) + 'min'
         logger.info("The value of checkpoint_timeout estimated based on the measured values is {}.".format(
             checkpoint_timeout_estimate_min))
@@ -68,7 +74,6 @@ class Recovery(PostgresParameter):
         sum_measurement_second = np.sum(self.measurement_second_array)
         logger.debug("Measurement of WAL size and recovery time pattern {} s".format(self.measurement_second_array))
         self.no_checkpoint_settings()
-        #self.workload.data_load()
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
         for measurement_time_second in self.measurement_second_array:
             self.workload.data_load()
@@ -195,17 +200,15 @@ class Recovery(PostgresParameter):
     def estimate_use_linear_regression(x_recovery_time_second, y, required_recovery_time_second):
         lr = linear_model.LinearRegression()
         # lr = linear_model.LinearRegression(fit_intercept=False)
-        lr.fit(x_recovery_time_second.reshape(-1, 1).astype(np.float64), y.reshape(-1, 1).astype(np.float64))
-        required_recovery_time_second = np.array([[required_recovery_time_second]], dtype=np.float64)
+        lr.fit(x_recovery_time_second, y)
         estimated_size = lr.predict(required_recovery_time_second)[0][0]
         return estimated_size
 
     @staticmethod
     def estimate_use_polynomial_regression(x_recovery_time_second, y, required_recovery_time_second):
-        regr = Pipeline([('poly', PolynomialFeatures(degree=2)), ('linear', linear_model.LinearRegression())])
-        regr.fit(x_recovery_time_second.reshape(-1, 1).astype(np.float64), y.reshape(-1, 1).astype(np.float64))
-        required_recovery_time_second = np.array([[required_recovery_time_second]], dtype=np.float64)
-        estimated_size = regr.predict(required_recovery_time_second)[0][0]
+        pr = Pipeline([('poly', PolynomialFeatures(degree=2)), ('linear', linear_model.LinearRegression())])
+        pr.fit(x_recovery_time_second, y)
+        estimated_size = pr.predict(required_recovery_time_second)[0][0]
         return estimated_size
 
     @staticmethod
