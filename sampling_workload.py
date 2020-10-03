@@ -28,10 +28,10 @@ def main(
     logger.info(
         "You can automatically tune the saved workload by setting the following in'./conf/postgres_opttune.conf'.\n"
         "[turning]\n"
-        "benchmark = my_workload \n"
+        "benchmark = sampled_workload \n"
         ":\n"
-        "[my-workload]\n"
-        "my_workload_save_file = {}".format(workload_save_file_path))
+        "[sampled_workload]\n"
+        "sampled_workload_save_file = {}".format(workload_save_file_path))
 
 
 if __name__ == "__main__":

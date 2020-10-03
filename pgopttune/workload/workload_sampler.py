@@ -4,7 +4,7 @@ from logging import getLogger
 from pgopttune.log.pg_csv_log import PostgresCsvLog
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.workload_sampling_config import WorkloadSamplingConfig
-from pgopttune.workload.my_workload import MyWorkload
+from pgopttune.workload.sampled_workload import SampledWorkload
 
 logger = getLogger(__name__)
 
@@ -31,10 +31,10 @@ class WorkloadSampler:
         logger.debug("Start importing the CSV file(saved executed SQL) into the table.")
         self.csv_log.load_csv_to_database(copy_dir=self.workload_sampling_config.my_workload_save_dir,
                                           dsn=self.workload_sampling_config.dsn)
-        my_workload = MyWorkload(start_unix_time=csv_log_start_time, end_unix_time=csv_log_end_time,
-                                 postgres_server_config=self.postgres_server_config,
-                                 workload_sampling_config=self.workload_sampling_config)
-        save_file = my_workload.save_my_workload()
+        workload = SampledWorkload(start_unix_time=csv_log_start_time, end_unix_time=csv_log_end_time,
+                                      postgres_server_config=self.postgres_server_config,
+                                      workload_sampling_config=self.workload_sampling_config)
+        save_file = workload.save_sampled_workload()
         logger.info("The workload has been recorded in '{}'".format(save_file))
         return save_file
 

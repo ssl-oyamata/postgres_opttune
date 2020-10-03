@@ -6,7 +6,7 @@ from pgopttune.config.postgres_server_config import PostgresServerConfig
 logger = getLogger(__name__)
 
 
-class MyTransaction:
+class SampledTransaction:
     def __init__(self, session_id: str, query_start_time: list, statement: list):
         self.session_id = session_id
         self.query_start_time = query_start_time

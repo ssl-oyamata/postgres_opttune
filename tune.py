@@ -10,7 +10,7 @@ from pgopttune.study.study import create_study
 from pgopttune.objective.objective_pgbench import ObjectivePgbench
 from pgopttune.objective.objective_oltpbench import ObjectiveOltpbench
 from pgopttune.objective.objective_star_schema_benchmark import ObjectiveStarSchemaBenchmark
-from pgopttune.objective.objective_my_workload import ObjectiveMyWorkload
+from pgopttune.objective.objective_sampled_workload import ObjectiveSampledWorkload
 from pgopttune.parameter.reset import reset_postgres_param
 from pgopttune.parameter.pg_tune_parameter import PostgresTuneParameter
 from pgopttune.recovery.pg_recovery import Recovery
@@ -19,7 +19,7 @@ from pgopttune.config.tune_config import TuneConfig
 from pgopttune.config.pgbench_config import PgbenchConfig
 from pgopttune.config.oltpbench_config import OltpbenchConfig
 from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
-from pgopttune.config.my_workload_config import MyWorkloadConfig
+from pgopttune.config.sampled_workload_config import SampledWorkloadConfig
 
 
 def main(
@@ -49,9 +49,9 @@ def main(
         star_schema_benchmark_config = StarSchemaBenchmarkConfig(conf_path)  # star schema benchmark config
         objective = ObjectiveStarSchemaBenchmark(postgres_server_config, tune_config, star_schema_benchmark_config)
     # my workload (save using sampling_workload.py)
-    elif tune_config.benchmark == 'my_workload':
-        my_workload_config = MyWorkloadConfig(conf_path)  # my worklod config config
-        objective = ObjectiveMyWorkload(postgres_server_config, tune_config, my_workload_config)
+    elif tune_config.benchmark == 'sampled_workload':
+        sampled_workload_config = SampledWorkloadConfig(conf_path)  # my workload sampled config
+        objective = ObjectiveSampledWorkload(postgres_server_config, tune_config, sampled_workload_config)
     else:
         raise NotImplementedError('This benchmark tool is not supported at this time.')
 
@@ -81,7 +81,7 @@ def main(
     # tuning using optuna
     try:
         sampler = get_sampler(tune_config.sample_mode)  # sampler setting
-        if tune_config.benchmark == 'my_workload':
+        if tune_config.benchmark == 'sampled_workload':
             logger.info("The purpose of optimization is to minimize the total SQL execution time")
             study = create_study(study_name=tune_config.study_name,  # create study
                                  sampler=sampler,

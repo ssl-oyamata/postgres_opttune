@@ -8,12 +8,12 @@ from pgopttune.workload.workload import Workload
 from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.workload_sampling_config import WorkloadSamplingConfig
-from pgopttune.workload.my_transaction import MyTransaction
+from pgopttune.workload.sampled_transaction import SampledTransaction
 
 logger = getLogger(__name__)
 
 
-class MyWorkload(Workload):
+class SampledWorkload(Workload):
     def __init__(self,
                  postgres_server_config: PostgresServerConfig,
                  workload_sampling_config: WorkloadSamplingConfig,
@@ -68,13 +68,13 @@ class MyWorkload(Workload):
                 session_id = row[1]
                 statement.append(row[2])
             else:
-                my_transaction = MyTransaction(session_id, query_stat_time, statement)
+                my_transaction = SampledTransaction(session_id, query_stat_time, statement)
                 self.my_transactions.append(my_transaction)
                 query_stat_time = [row[0]]
                 session_id = row[1]
                 statement = [row[2]]
 
-    def save_my_workload(self):
+    def save_sampled_workload(self):
         save_file_name = datetime.datetime.fromtimestamp(self.start_unix_time).strftime("%Y-%m-%d_%H%M%S.%f") + \
                          "-" \
                          + datetime.datetime.fromtimestamp(self.end_unix_time).strftime("%Y-%m-%d_%H%M%S.%f") + ".pkl"
@@ -102,7 +102,7 @@ class MyWorkload(Workload):
         return elapsed_time
 
     @classmethod
-    def load_my_workload(cls, load_file_path, postgres_server_config: PostgresServerConfig = None):
+    def load_sampled_workload(cls, load_file_path, postgres_server_config: PostgresServerConfig = None):
         with open(load_file_path, 'rb') as f:
             workload = pickle.load(f)
         if postgres_server_config is not None:
@@ -112,7 +112,7 @@ class MyWorkload(Workload):
     @staticmethod
     def data_load():
         # TODO:
-        logger.warning("At this time, the data loading function to the sampled database is not implemented.")
+        logger.warning("At the moment, in the sampled workload, The data reload function is not implemented.")
 
     def _run_transaction(self, transaction_index=0):
         # logger.debug("Transaction's statement : {}".format(self.my_transactions[transaction_index].statement))
@@ -130,19 +130,19 @@ if __name__ == "__main__":
     conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
     workload_sampling_config_test = WorkloadSamplingConfig(conf_path)
-    my_workload = MyWorkload(start_unix_time=1593093506.9530554, end_unix_time=1593093567.088895,
-                             workload_sampling_config=workload_sampling_config_test,
-                             postgres_server_config=postgres_server_config_test)
-    save_file = my_workload.save_my_workload()
+    sampled_workload = SampledWorkload(start_unix_time=1593093506.9530554, end_unix_time=1593093567.088895,
+                                       workload_sampling_config=workload_sampling_config_test,
+                                       postgres_server_config=postgres_server_config_test)
+    save_file = sampled_workload.save_sampled_workload()
     logger.debug("run transactions ")
-    my_workload_elapsed_time = my_workload.run()
-    logger.debug(my_workload_elapsed_time)
-    load_workload = MyWorkload.load_my_workload(save_file, postgres_server_config=postgres_server_config_test)
+    workload_elapsed_time = sampled_workload.run()
+    logger.debug(workload_elapsed_time)
+    load_workload = SampledWorkload.load_sampled_workload(save_file, postgres_server_config=postgres_server_config_test)
     logger.debug("run transactions using saved file")
     load_workload_elapsed_time = load_workload.run()
     logger.debug(load_workload_elapsed_time)
     logger.debug("finised...")
-    logger.debug(my_workload_elapsed_time)
+    logger.debug(workload_elapsed_time)
     logger.debug(load_workload_elapsed_time)
 
     # my_workload.extract_workload()
