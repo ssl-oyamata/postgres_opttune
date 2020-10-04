@@ -3,7 +3,7 @@ from pgopttune.config.config import Config
 
 
 class SampledWorkloadConfig(Config):
-    def __init__(self, conf_path, section='sampled_workload'):
+    def __init__(self, conf_path, section='sampled-workload'):
         super().__init__(conf_path)
         self.conf_path = conf_path
         self.config_dict = dict(self.config.items(section))

@@ -13,7 +13,7 @@ class ObjectiveSampledWorkload(Objective):
     def __init__(self,
                  postgres_server_config: PostgresServerConfig,
                  tune_config: TuneConfig,
-                 my_workload_config: SampledWorkloadConfig):
+                 sampled_workload_config: SampledWorkloadConfig):
         super().__init__(postgres_server_config, tune_config)
-        self.workload = SampledWorkload.load_sampled_workload(my_workload_config.my_workload_save_file,
+        self.workload = SampledWorkload.load_sampled_workload(sampled_workload_config.my_workload_save_file,
                                                               postgres_server_config=postgres_server_config)

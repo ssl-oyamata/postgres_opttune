@@ -30,7 +30,7 @@ def main(
         "[turning]\n"
         "benchmark = sampled_workload \n"
         ":\n"
-        "[sampled_workload]\n"
+        "[sampled-workload]\n"
         "sampled_workload_save_file = {}".format(workload_save_file_path))
 
 
