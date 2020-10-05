@@ -18,17 +18,10 @@ class StarSchemaBenchmark(Workload):
         self.backup_database_prefix = 'ssb_backup_'
 
     def data_load(self):
-        if self._check_exist_backup_database():
-            # Recreate the database using the backed up database as a template
-            self._drop_database()
-            self._create_database_use_backup_database()
-        else:
-            self._create_table()  # create table
-            self._truncate_table()  # truncate table
-            self._data_file_generate()  # create data file
-            self._load_data()  # data load
-            self._create_backup_database()  # backup database
-        self.vacuum_database()  # vacuum database
+        self._create_table()  # create table
+        self._truncate_table()  # truncate table
+        self._data_file_generate()  # create data file
+        self._load_data()  # data load
 
     def _create_table(self):
         for table_sql_filepath in self.ssb_config.table_sql_filepath_list:

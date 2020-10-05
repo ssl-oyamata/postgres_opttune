@@ -41,7 +41,7 @@ class Workload:
                 xact_commit = cur.fetchone()["xact_commit"]
         return xact_commit
 
-    def _check_exist_backup_database(self):
+    def check_exist_backup_database(self):
         check_exist_backup_database_sql = "SELECT count(datname) FROM pg_database WHERE datname = %s"
         with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)
@@ -57,7 +57,7 @@ class Workload:
             return False
 
     @retry(stop_max_attempt_number=5, wait_fixed=10000)
-    def _create_backup_database(self):
+    def create_backup_database(self):
         logger.debug(
             "Start backing up the database. Database : {} ".format(self.postgres_server_config.database))
 
@@ -74,7 +74,7 @@ class Workload:
         return self.backup_database_prefix + self.config_hash
 
     @retry(stop_max_attempt_number=5, wait_fixed=10000)
-    def _drop_database(self):
+    def drop_database(self):
         drop_database_sql = "DROP DATABASE {} ".format(self.postgres_server_config.database)
         backup_database_dsn = self._get_backup_database_dsn()
         with get_pg_connection(dsn=backup_database_dsn) as conn:
@@ -84,7 +84,7 @@ class Workload:
         logger.debug("The database has been deleted. Database : {}".format(self.postgres_server_config.database))
 
     @retry(stop_max_attempt_number=5, wait_fixed=10000)
-    def _create_database_use_backup_database(self):
+    def create_database_use_backup_database(self):
         create_database_use_backup_sql = "CREATE DATABASE {} TEMPLATE {}".format(self.postgres_server_config.database,
                                                                                  self._get_backup_database_name())
         backup_database_dsn = self._get_backup_database_dsn()

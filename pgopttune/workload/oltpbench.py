@@ -21,23 +21,16 @@ class Oltpbench(Workload):
         self.config_hash = get_file_hash(oltpbench_config.oltpbench_config_path)
 
     def data_load(self):
-        if self._check_exist_backup_database():
-            # Recreate the database using the backed up database as a template
-            self._drop_database()
-            self._create_database_use_backup_database()
-        else:  # First data load
-            cwd = os.getcwd()
-            config_path = os.path.join(cwd, self.oltpbench_config.oltpbench_config_path)
-            data_load_cmd = "{}/oltpbenchmark -b {} -c {} --create=true --load=true".format(
-                self.oltpbench_config.oltpbench_path,
-                self.oltpbench_config.benchmark_kind,
-                config_path)
-            os.chdir(self.oltpbench_config.oltpbench_path)
-            logger.debug('run oltpbench data load command : {}'.format(data_load_cmd))
-            run_command(data_load_cmd)
-            os.chdir(cwd)
-            self._create_backup_database()  # backup database
-        self.vacuum_database()  # vacuum analyze
+        cwd = os.getcwd()
+        config_path = os.path.join(cwd, self.oltpbench_config.oltpbench_config_path)
+        data_load_cmd = "{}/oltpbenchmark -b {} -c {} --create=true --load=true".format(
+            self.oltpbench_config.oltpbench_path,
+            self.oltpbench_config.benchmark_kind,
+            config_path)
+        os.chdir(self.oltpbench_config.oltpbench_path)
+        logger.debug('run oltpbench data load command : {}'.format(data_load_cmd))
+        run_command(data_load_cmd)
+        os.chdir(cwd)
 
     def run(self, measurement_time_second: int = None):
         grep_string = "requests\/sec"
