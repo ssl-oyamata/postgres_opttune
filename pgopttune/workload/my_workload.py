@@ -13,6 +13,7 @@ class MyWorkLoad(Workload):
     def __init__(self, postgres_server_config: PostgresServerConfig, my_workload_config: MyWorkloadConfig):
         super().__init__(postgres_server_config)
         self.my_workload_config = my_workload_config
+        self.backup_database_prefix = 'my_workload_backup_'
         os.environ['PGHOST'] = postgres_server_config.host
         os.environ['PGPORT'] = postgres_server_config.port
         os.environ['PGDATABASE'] = postgres_server_config.database
@@ -20,9 +21,15 @@ class MyWorkLoad(Workload):
         os.environ['PGPASSWORD'] = postgres_server_config.password
 
     def data_load(self):
-        data_load_cmd = self.my_workload_config.data_load_command
-        logger.debug('run my workload data load command : {}'.format(data_load_cmd))
-        run_command(data_load_cmd)
+        if self._check_exist_backup_database():
+            # Recreate the database using the backed up database as a template
+            self._drop_database()
+            self._create_database_use_backup_database()
+        else:
+            data_load_cmd = self.my_workload_config.data_load_command
+            logger.debug('run my workload data load command : {}'.format(data_load_cmd))
+            run_command(data_load_cmd)
+            self._create_backup_database()  # backup database
         self.vacuum_database()  # vacuum analyze
 
     def run(self):

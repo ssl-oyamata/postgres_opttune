@@ -11,6 +11,7 @@ class Config:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), conf_path)
         else:
             config.read(conf_path, encoding=encoding)
+        self.conf_path = conf_path
         self.config = config
         self.config_dict = dict(config.items('DEFAULT'))
 

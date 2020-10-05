@@ -15,17 +15,24 @@ class Pgbench(Workload):
     def __init__(self, postgres_server_config: PostgresServerConfig, pgbench_config: PgbenchConfig):
         super().__init__(postgres_server_config)
         self.pgbench_config = pgbench_config
+        self.backup_database_prefix = 'pgbench_backup_'
         os.environ['PGPASSWORD'] = postgres_server_config.password
 
     def data_load(self):
-        data_load_cmd = "{}/pgbench -h {} -p {} -U {} {} -i -s {}".format(self.postgres_server_config.pgbin,
-                                                                          self.postgres_server_config.host,
-                                                                          self.postgres_server_config.port,
-                                                                          self.postgres_server_config.user,
-                                                                          self.postgres_server_config.database,
-                                                                          self.pgbench_config.scale_factor)
-        logger.debug('run pgbench data load command : {}'.format(data_load_cmd))
-        run_command(data_load_cmd)
+        if self._check_exist_backup_database():
+            # Recreate the database using the backed up database as a template
+            self._drop_database()
+            self._create_database_use_backup_database()
+        else:
+            data_load_cmd = "{}/pgbench -h {} -p {} -U {} {} -i -s {}".format(self.postgres_server_config.pgbin,
+                                                                              self.postgres_server_config.host,
+                                                                              self.postgres_server_config.port,
+                                                                              self.postgres_server_config.user,
+                                                                              self.postgres_server_config.database,
+                                                                              self.pgbench_config.scale_factor)
+            logger.debug('run pgbench data load command : {}'.format(data_load_cmd))
+            run_command(data_load_cmd)
+            self._create_backup_database()  # backup database
         self.vacuum_database()  # vacuum analyze
 
     def run(self, measurement_time_second: int = None):
