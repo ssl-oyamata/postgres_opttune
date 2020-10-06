@@ -14,6 +14,21 @@ class Workload:
         self.backup_database_prefix = 'postgres_opttune_backup_'
         self.config_hash = get_file_hash(postgres_server_config.conf_path)
 
+    def prepare_workload_database(self):
+        if self.check_exist_backup_database():
+            # Recreate the database using the backed up database as a template
+            self.drop_database()
+            self.create_database_use_backup_database()
+        else:
+            self.data_load()  # data load
+            self.create_backup_database()  # backup database
+
+    def data_load(self):
+        raise NotImplementedError("subclasses of Workload must provide a data_load() method.")
+
+    def run(self, measurement_time_second: int = None):
+        raise NotImplementedError("subclasses of Workload must provide a run() method.")
+
     def vacuum_database(self):
         """
         run vacuum analyze

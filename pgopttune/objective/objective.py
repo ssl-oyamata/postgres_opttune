@@ -35,13 +35,7 @@ class Objective:
 
     def run_workload(self, trial):
         if (int(trial.number) == 0) or (int(trial.number) % self.data_load_interval == 0):
-            if self.workload.check_exist_backup_database():
-                # Recreate the database using the backed up database as a template
-                self.workload.drop_database()
-                self.workload.create_database_use_backup_database()
-            else:
-                self.workload.data_load()  # data load
-                self.workload.create_backup_database()  # backup database
+            self.workload.prepare_workload_database()
         self.workload.vacuum_database()  # vacuum analyze
         self.params.reset_database()  # cache free and database restart
         objective_value = self.workload.run()  # benchmark run

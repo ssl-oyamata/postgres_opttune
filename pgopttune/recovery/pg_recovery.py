@@ -19,6 +19,7 @@ from pgopttune.utils.pg_connect import get_pg_connection
 from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
 from pgopttune.config.postgres_server_config import PostgresServerConfig
+from pgopttune.workload.my_workload import MyWorkLoad
 from pgopttune.workload.oltpbench import Oltpbench
 from pgopttune.workload.pgbench import Pgbench
 
@@ -28,7 +29,7 @@ logger = getLogger(__name__)
 class Recovery(PostgresParameter):
     def __init__(self,
                  postgres_server_config: PostgresServerConfig,
-                 workload: Union[Oltpbench, Pgbench],
+                 workload: Union[Oltpbench, Pgbench, MyWorkLoad],
                  required_recovery_time_second=300,
                  measurement_second_scale=300,
                  measurement_pattern=10):
@@ -76,7 +77,7 @@ class Recovery(PostgresParameter):
         self.no_checkpoint_settings()
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
         for measurement_time_second in self.measurement_second_array:
-            self.workload.data_load()
+            self.workload.prepare_workload_database()
             self.reset_database()
             self.workload.run(measurement_time_second=measurement_time_second)
             recovery_wal_size = self.get_recovery_wal_size()
