@@ -60,6 +60,7 @@ class PostgresParameter:
         restart_database_cmd = 'sudo -i -u {} {}/pg_ctl -D {} -w -t 600 restart'.format(
             self.postgres_server_config.os_user, self.postgres_server_config.pgbin,
             self.postgres_server_config.pgdata)
+        logger.debug('Restart PostgreSQL.')
         # localhost PostgreSQL
         if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
             run_command(restart_database_cmd, stdout_devnull=True)
@@ -78,7 +79,7 @@ class PostgresParameter:
 
     def _wait_startup_database(self, max_retry=300, sleep_time=2):
         is_in_recovery_sql = 'SELECT pg_is_in_recovery()'
-
+        logger.debug('Check the startup status of PostgreSQL.')
         # use psycopg2
         for i in range(max_retry + 1):
             try:
