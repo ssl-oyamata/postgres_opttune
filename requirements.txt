@@ -1,4 +1,5 @@
 optuna==2.3.0
+optuna-dashboard
 scipy
 scikit-learn
 scikit-optimize
