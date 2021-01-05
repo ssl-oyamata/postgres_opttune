@@ -21,11 +21,19 @@ class MyWorkLoad(Workload):
         os.environ['PGPASSWORD'] = postgres_server_config.password
 
     def data_load(self):
+        cwd = os.getcwd()
+        if self.my_workload_config.work_directory != "current_directory":
+            os.chdir(self.my_workload_config.work_directory)
         data_load_cmd = self.my_workload_config.data_load_command
         logger.debug('run my workload data load command : {}'.format(data_load_cmd))
         run_command(data_load_cmd)
+        if self.my_workload_config.work_directory != "current_directory":
+            os.chdir(cwd)
 
     def run(self, measurement_time_second: int = None):
+        cwd = os.getcwd()
+        if self.my_workload_config.work_directory != "current_directory":
+            os.chdir(self.my_workload_config.work_directory)
         run_workload_command = self.my_workload_config.run_workload_command
         start_number_of_xact_commit = self.get_number_of_xact_commit()
         workload_start_time = time.time()  # start measurement time
@@ -42,6 +50,8 @@ class MyWorkLoad(Workload):
         else:
             run_command(run_workload_command)  # run workload
             workload_elapsed_times = time.time() - workload_start_time
+        if self.my_workload_config.work_directory != "current_directory":
+            os.chdir(cwd)
         time.sleep(1)  # default PGSTAT_STAT_INTERVAL(500ms)
         workload_number_of_xact_commit = self.get_number_of_xact_commit() - start_number_of_xact_commit
         # logger.info(workload_number_of_xact_commit)

@@ -7,6 +7,10 @@ class MyWorkloadConfig(Config):
         self.config_dict = dict(self.config.items(section))
 
     @property
+    def work_directory(self):
+        return self.get_parameter_value('work_directory')
+
+    @property
     def data_load_command(self):
         return self.get_parameter_value('data_load_command')
 

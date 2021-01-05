@@ -34,6 +34,7 @@ class Objective:
         logger.info('trail#{} conf saved : {}'.format(trial.number, trial_conf_path))
 
     def run_workload(self, trial):
+        self.params.reset_database(is_free_cache=False)
         if (int(trial.number) == 0) or (int(trial.number) % self.data_load_interval == 0):
             self.workload.prepare_workload_database()
         self.workload.vacuum_database()  # vacuum analyze
