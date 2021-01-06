@@ -76,10 +76,13 @@ class Recovery(PostgresParameter):
         logger.debug("Measurement of WAL size and recovery time pattern {} s".format(self.measurement_second_array))
         self.no_checkpoint_settings()
         progress_bar = tqdm(total=100, ascii=True, desc="Measurement of WAL size and recovery time")
+        workload_elapsed_time = np.array([])  # only use MyWorkLoad
         for measurement_time_second in self.measurement_second_array:
             self.workload.prepare_workload_database()
             self.reset_database()
             self.workload.run(measurement_time_second=measurement_time_second)
+            if isinstance(self.workload, MyWorkLoad):
+                workload_elapsed_time = np.append(workload_elapsed_time, self.workload.workload_elapsed_time)
             recovery_wal_size = self.get_recovery_wal_size()
             self._crash_database()
             self._free_cache()
@@ -90,9 +93,12 @@ class Recovery(PostgresParameter):
             self.y_recovery_wal_size = np.append(self.y_recovery_wal_size, recovery_wal_size)
             progress_bar.update(measurement_time_second / sum_measurement_second * 100)
 
+        if isinstance(self.workload, MyWorkLoad):
+            self.measurement_second_array = workload_elapsed_time
         self.reset_param()
         progress_bar.close()
         np.set_printoptions(precision=3)
+        logger.info("Measurement pattern(sec) : {}".format(self.measurement_second_array))
         logger.info("The wal size written after the checkpoint(Byte) : {}".format(self.y_recovery_wal_size))
         logger.info("PostgreSQL Recovery time(Sec) : {}".format(self.x_recovery_time))
 
