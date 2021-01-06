@@ -8,9 +8,6 @@ from pgopttune.utils.logger import logging_dict
 from pgopttune.sampler.sampler import get_sampler
 from pgopttune.study.study import create_study
 from pgopttune.objective.objective_my_workload import ObjectiveMyWorkload
-from pgopttune.objective.objective_pgbench import ObjectivePgbench
-from pgopttune.objective.objective_oltpbench import ObjectiveOltpbench
-from pgopttune.objective.objective_star_schema_benchmark import ObjectiveStarSchemaBenchmark
 from pgopttune.objective.objective_sampled_workload import ObjectiveSampledWorkload
 from pgopttune.parameter.reset import reset_postgres_param
 from pgopttune.parameter.pg_tune_parameter import PostgresTuneParameter
@@ -18,9 +15,6 @@ from pgopttune.recovery.pg_recovery import Recovery
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.config.tune_config import TuneConfig
 from pgopttune.config.my_workload_config import MyWorkloadConfig
-from pgopttune.config.pgbench_config import PgbenchConfig
-from pgopttune.config.oltpbench_config import OltpbenchConfig
-from pgopttune.config.star_schema_benchmark_config import StarSchemaBenchmarkConfig
 from pgopttune.config.sampled_workload_config import SampledWorkloadConfig
 
 
@@ -42,18 +36,6 @@ def main(
     if tune_config.benchmark == 'my_workload':
         my_workload_config = MyWorkloadConfig(conf_path)  # pgbench config
         objective = ObjectiveMyWorkload(postgres_server_config, tune_config, my_workload_config)
-    # pgbench
-    elif tune_config.benchmark == 'pgbench':
-        pgbench_config = PgbenchConfig(conf_path)  # pgbench config
-        objective = ObjectivePgbench(postgres_server_config, tune_config, pgbench_config)
-    # oltpbench
-    elif tune_config.benchmark == 'oltpbench':
-        oltpbench_config = OltpbenchConfig(conf_path)  # oltpbench config
-        objective = ObjectiveOltpbench(postgres_server_config, tune_config, oltpbench_config)
-    # star schema benchmark
-    elif tune_config.benchmark == 'star_schema_benchmark':
-        star_schema_benchmark_config = StarSchemaBenchmarkConfig(conf_path)  # star schema benchmark config
-        objective = ObjectiveStarSchemaBenchmark(postgres_server_config, tune_config, star_schema_benchmark_config)
     # sampled workload (save using sampling_workload.py)
     elif tune_config.benchmark == 'sampled_workload':
         sampled_workload_config = SampledWorkloadConfig(conf_path)  # my workload sampled config
