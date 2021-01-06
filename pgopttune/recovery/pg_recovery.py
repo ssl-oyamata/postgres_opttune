@@ -8,7 +8,6 @@ import traceback
 import subprocess
 import numpy as np
 from logging import getLogger
-from typing import Union
 from tqdm import tqdm
 from psycopg2.extras import DictCursor
 from sklearn import linear_model
@@ -20,8 +19,6 @@ from pgopttune.utils.remote_command import SSHCommandExecutor
 from pgopttune.utils.command import run_command
 from pgopttune.config.postgres_server_config import PostgresServerConfig
 from pgopttune.workload.my_workload import MyWorkLoad
-from pgopttune.workload.oltpbench import Oltpbench
-from pgopttune.workload.pgbench import Pgbench
 
 logger = getLogger(__name__)
 
@@ -29,7 +26,7 @@ logger = getLogger(__name__)
 class Recovery(PostgresParameter):
     def __init__(self,
                  postgres_server_config: PostgresServerConfig,
-                 workload: Union[Oltpbench, Pgbench, MyWorkLoad],
+                 workload: MyWorkLoad,
                  required_recovery_time_second=300,
                  measurement_second_scale=300,
                  measurement_pattern=10):
@@ -225,14 +222,13 @@ class Recovery(PostgresParameter):
 
 if __name__ == "__main__":
     from pgopttune.config.postgres_server_config import PostgresServerConfig
-    from pgopttune.config.oltpbench_config import OltpbenchConfig
+    from pgopttune.config.my_workload_config import MyWorkloadConfig
     from logging import basicConfig, DEBUG
 
     basicConfig(level=DEBUG)
     conf_path = './conf/postgres_opttune.conf'
     postgres_server_config_test = PostgresServerConfig(conf_path)  # PostgreSQL Server config
-    oltpbench_config_test = OltpbenchConfig(conf_path)
-    workload_test = Oltpbench(postgres_server_config=postgres_server_config_test,
-                              oltpbench_config=oltpbench_config_test)
+    my_wolkload_config_test = MyWorkloadConfig(conf_path)
+    workload_test = MyWorkLoad(postgres_server_config=postgres_server_config_test,my_workload_config=my_wolkload_config_test)
     recovery = Recovery(postgres_server_config_test, required_recovery_time_second=300, workload=workload_test)
     logger.debug(recovery.estimate_check_point_parameters())

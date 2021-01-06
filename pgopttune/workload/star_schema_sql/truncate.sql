@@ -1,1 +1,0 @@
-TRUNCATE customer, date, part, supplier, lineorder;
