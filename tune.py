@@ -45,7 +45,7 @@ def main(
 
     # Estimate the wal_max_size based on the recovery time allowed.
     if int(tune_config.required_recovery_time_second) != 0 \
-            and (tune_config.benchmark in ['my_workload', 'pgbench', 'oltpbench']):
+            and (tune_config.benchmark in ['my_workload']):
         logger.info('Start to estimate the wal_max_size and checkpoint_timeout parameter. \n'
                     'required_recovery_time_second = "{}s"'.format(tune_config.required_recovery_time_second))
         recovery = Recovery(postgres_server_config,
