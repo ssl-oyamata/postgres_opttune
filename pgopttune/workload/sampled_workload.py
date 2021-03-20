@@ -109,10 +109,13 @@ class SampledWorkload(Workload):
             workload.postgres_server_config = postgres_server_config
         return workload
 
-    @staticmethod
-    def data_load():
+    def data_load(self):
         # TODO:
         logger.warning("At the moment, in the sampled workload, The data reload function is not implemented.")
+
+    def warm_up(self):
+        # TODO:
+        logger.warning("At the moment, in the sampled workload, The warm up function is not implemented.")
 
     def _run_transaction(self, transaction_index=0):
         # logger.debug("Transaction's statement : {}".format(self.my_transactions[transaction_index].statement))

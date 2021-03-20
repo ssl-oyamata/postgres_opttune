@@ -14,6 +14,7 @@ class Objective:
         self.params = PostgresTuneParameter(postgres_server_config,  # turning parameter
                                             params_json_dir=tune_config.parameter_json_dir)
         self.data_load_interval = tune_config.data_load_interval
+        self.warm_up_interval = tune_config.warm_up_interval
         self.workload = None
 
     def __call__(self, trial):
@@ -39,6 +40,8 @@ class Objective:
             self.workload.prepare_workload_database()
         self.workload.vacuum_database()  # vacuum analyze
         self.params.reset_database()  # cache free and database restart
+        if (int(trial.number) == 0) or (int(trial.number) % self.warm_up_interval == 0):
+            self.workload.warm_up()  # run warm_up_command
         objective_value = self.workload.run()  # benchmark run
         return objective_value
 

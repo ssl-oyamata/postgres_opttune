@@ -23,18 +23,25 @@ class MyWorkLoad(Workload):
 
     def data_load(self):
         cwd = os.getcwd()
-        if self.my_workload_config.work_directory != "current_directory":
-            os.chdir(self.my_workload_config.work_directory)
+        self._change_work_directory()
         data_load_cmd = self.my_workload_config.data_load_command
-        logger.debug('run my workload data load command : {}'.format(data_load_cmd))
+        logger.debug('Run data_load_command : {}'.format(data_load_cmd))
         run_command(data_load_cmd)
+        if self.my_workload_config.work_directory != "current_directory":
+            os.chdir(cwd)
+
+    def warm_up(self):
+        cwd = os.getcwd()
+        self._change_work_directory()
+        warm_up_command = self.my_workload_config.warm_up_command
+        logger.debug('Run warm_up_command : {}'.format(warm_up_command))
+        run_command(warm_up_command)
         if self.my_workload_config.work_directory != "current_directory":
             os.chdir(cwd)
 
     def run(self, measurement_time_second: int = None):
         cwd = os.getcwd()
-        if self.my_workload_config.work_directory != "current_directory":
-            os.chdir(self.my_workload_config.work_directory)
+        self._change_work_directory()
         run_workload_command = self.my_workload_config.run_workload_command
         start_number_of_xact_commit = self.get_number_of_xact_commit()
         workload_start_time = time.time()  # start measurement time
@@ -58,6 +65,10 @@ class MyWorkLoad(Workload):
         # logger.info(workload_number_of_xact_commit)
         tps = self.calculate_transaction_per_second(workload_number_of_xact_commit, self.workload_elapsed_time)
         return tps
+
+    def _change_work_directory(self):
+        if self.my_workload_config.work_directory != "current_directory":
+            os.chdir(self.my_workload_config.work_directory)
 
     @staticmethod
     def calculate_transaction_per_second(number_of_xact_commit, elapsed_seconds):

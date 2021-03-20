@@ -26,6 +26,9 @@ class Workload:
     def data_load(self):
         raise NotImplementedError("subclasses of Workload must provide a data_load() method.")
 
+    def warm_up(self):
+        raise NotImplementedError("subclasses of Workload must provide a warm_up() method.")
+
     def run(self, measurement_time_second: int = None):
         raise NotImplementedError("subclasses of Workload must provide a run() method.")
 
@@ -33,6 +36,7 @@ class Workload:
         """
         run vacuum analyze
         """
+        logger.debug("Run VACUUM ANALYZE.")
         vacuum_analyze_sql = "VACUUM ANALYZE"
         with get_pg_connection(dsn=self.postgres_server_config.dsn) as conn:
             conn.set_session(autocommit=True)

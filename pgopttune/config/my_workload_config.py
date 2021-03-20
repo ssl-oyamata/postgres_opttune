@@ -15,5 +15,9 @@ class MyWorkloadConfig(Config):
         return self.get_parameter_value('data_load_command')
 
     @property
+    def warm_up_command(self):
+        return self.get_parameter_value('warm_up_command')
+
+    @property
     def run_workload_command(self):
         return self.get_parameter_value('run_workload_command')

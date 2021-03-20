@@ -31,6 +31,10 @@ class TuneConfig(Config):
         return int(self.get_parameter_value('data_load_interval'))
 
     @property
+    def warm_up_interval(self):
+        return int(self.get_parameter_value('warm_up_interval'))
+
+    @property
     def sample_mode(self):
         return self.get_parameter_value('sample_mode')
 

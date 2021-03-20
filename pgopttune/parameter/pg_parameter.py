@@ -109,7 +109,7 @@ class PostgresParameter:
 
     def _free_cache(self):
         free_cache_cmd = 'sudo bash -c "sync"; sudo bash -c "echo 1 > /proc/sys/vm/drop_caches"'
-
+        logger.debug("Free pagecache.")
         # localhost PostgreSQL
         if self.postgres_server_config.host == '127.0.0.1' or self.postgres_server_config.host == 'localhost':
             run_command(free_cache_cmd)
